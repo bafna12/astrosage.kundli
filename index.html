@@ -52,7 +52,7 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        // --- EMAILJS INITIALIZATION ---
+        // --- EMAILJS INITIALIZATION (Your Public Key) ---
         emailjs.init("8r2tapCdRmVdIbFQb"); 
 
         function App() {
@@ -86,25 +86,23 @@
                 const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
                 setGeneratedOtp(newOtp);
                 
-                // 1. FORCE THE OTP BUBBLE TO OPEN IMMEDIATELY 
+                // 1. OPEN THE BOX
                 setOtpSent(true); 
                 
-                // 2. Try sending the email
+                // 2. SEND THE EMAIL
                 try {
-                    await emailjs.send("YOUR_SERVICE_ID_HERE", "template_hod7wir", {
+                    // PUT YOUR REAL SERVICE ID ON THIS LINE WHERE IT SAYS "PASTE_REAL_SERVICE_ID_HERE"
+                    await emailjs.send("PASTE_REAL_SERVICE_ID_HERE", "template_hod7wir", {
                         to_email: email,
                         otp_code: newOtp,
                     });
                     
-                    // If successful, wait half a second so the UI loads, then alert
                     setTimeout(() => alert("Success! The OTP was sent to " + email), 500);
 
                 } catch (err) {
                     console.error("EMAILJS ERROR:", err);
-                    
-                    // If it fails, the box is ALREADY open. Give them the code!
                     setTimeout(() => {
-                        alert(`Email setup is missing the Service ID, so the email didn't send.\n\nHOWEVER, your TEST OTP is: ${newOtp}\n\nYou can enter this in the box that just appeared to continue testing!`);
+                        alert(`Email setup is STILL missing the correct Service ID, so the email didn't send.\n\nHOWEVER, your TEST OTP is: ${newOtp}\n\nYou can enter this in the box that just appeared to continue testing!`);
                     }, 500);
                 }
             };
