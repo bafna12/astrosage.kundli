@@ -52,7 +52,7 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        // --- EMAILJS INITIALIZATION (Your Public Key) ---
+        // --- EMAILJS INITIALIZATION ---
         emailjs.init("8r2tapCdRmVdIbFQb"); 
 
         function App() {
@@ -89,10 +89,9 @@
                 // 1. OPEN THE BOX
                 setOtpSent(true); 
                 
-                // 2. SEND THE EMAIL
+                // 2. SEND THE EMAIL (Using your real Service ID now!)
                 try {
-                    // PUT YOUR REAL SERVICE ID ON THIS LINE WHERE IT SAYS "PASTE_REAL_SERVICE_ID_HERE"
-                    await emailjs.send("PASTE_REAL_SERVICE_ID_HERE", "template_hod7wir", {
+                    await emailjs.send("service_z2jyz5c", "template_hod7wir", {
                         to_email: email,
                         otp_code: newOtp,
                     });
@@ -102,7 +101,7 @@
                 } catch (err) {
                     console.error("EMAILJS ERROR:", err);
                     setTimeout(() => {
-                        alert(`Email setup is STILL missing the correct Service ID, so the email didn't send.\n\nHOWEVER, your TEST OTP is: ${newOtp}\n\nYou can enter this in the box that just appeared to continue testing!`);
+                        alert(`Oops! EmailJS had an error.\n\nHOWEVER, your TEST OTP is: ${newOtp}\n\nYou can enter this in the box that just appeared to continue testing!`);
                     }, 500);
                 }
             };
