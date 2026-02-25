@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Astro Veda - Online Consultation</title>
+    <title>Astro Veda - Premium Astrology</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     
     <script>
         tailwind.config = {
@@ -15,35 +16,55 @@
                 extend: {
                     colors: {
                         brand: {
-                            dark: '#0B1120',
-                            card: '#1e293b',
-                            cyan: '#06b6d4',
-                            cyanHover: '#0891b2'
+                            bg: '#000000',
+                            card: '#0a0a0a',
+                            cardBorder: '#1f1f1f',
+                            accent: '#facc15', // Yellow
+                            text: '#ffffff',
+                            muted: '#a1a1aa'
                         }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
                     }
                 }
             }
         }
     </script>
     <style>
-        body { background-color: #0B1120; color: #e2e8f0; font-family: 'Inter', sans-serif; }
-        .fade-in { animation: fadeIn 0.5s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        body { background-color: #000000; color: #ffffff; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        .glass-panel { background: rgba(10, 10, 10, 0.8); backdrop-filter: blur(12px); border: 1px solid #1f1f1f; }
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        .slide-up { animation: slideUp 0.5s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState } = React;
+        const { useState, useEffect } = React;
+
+        // --- EMAILJS INITIALIZATION ---
+        // You will replace these with your actual keys later
+        emailjs.init("8r2tapCdRmVdIbFQb"); 
 
         function App() {
-            // View routing: 'client' or 'admin'
             const [view, setView] = useState('client');
+            const [isBooking, setIsBooking] = useState(false);
             
             // Client States
-            const [step, setStep] = useState(0); 
+            const [step, setStep] = useState(1); 
             const [email, setEmail] = useState('');
+            const [generatedOtp, setGeneratedOtp] = useState('');
+            const [userOtp, setUserOtp] = useState('');
             const [otpSent, setOtpSent] = useState(false);
             const [date, setDate] = useState('');
             const [time, setTime] = useState('');
@@ -54,13 +75,41 @@
             const [adminId, setAdminId] = useState('');
             const [adminPass, setAdminPass] = useState('');
             const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
-            
-            // Mock Database for Admin Panel
             const [appointments, setAppointments] = useState([
-                { id: 'ORD-9821', email: 'user@example.com', phone: '9876543210', date: '2026-03-01', time: '10:00 AM', txid: 'UPI123456789', status: 'Pending' }
+                { id: 'ORD-1029', email: 'user@example.com', phone: '9876543210', date: '2026-03-01', time: '10:00 AM', txid: 'UPI123456789', status: 'Pending' }
             ]);
 
-            // --- ADMIN LOGIC ---
+            // --- OTP LOGIC via EmailJS ---
+            const handleSendOTP = (e) => {
+                e.preventDefault();
+                if(!email) return alert("Please enter an email");
+                
+                // Generate 6 digit OTP
+                const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
+                setGeneratedOtp(newOtp);
+                
+                // Send via EmailJS (Uncomment and configure once you have keys)
+               
+                emailjs.send("astrosage.kundli", "template_hod7wir", {
+                    to_email: email,
+                    otp_code: newOtp,
+                }).then(() => {
+                    setOtpSent(true);
+                    alert("OTP Sent to " + email);
+                }).catch((err) => {
+                    console.error(err);
+                    alert("Failed to send OTP. Check console.");
+                });
+
+            const handleVerifyOTP = (e) => {
+                e.preventDefault();
+                if (userOtp === generatedOtp) {
+                    setStep(2);
+                } else {
+                    alert("Incorrect OTP");
+                }
+            };
+
             const handleAdminLogin = (e) => {
                 e.preventDefault();
                 if (adminId === 'Pratham@123' && adminPass === 'Pkjewellers15') {
@@ -70,178 +119,240 @@
                 }
             };
 
-            const handleApprove = (id) => {
-                setAppointments(appointments.map(app => app.id === id ? { ...app, status: 'Approved' } : app));
-                alert(`Receipt Sent via Email!\nOrder ID: ${id}\nAmount: ₹499\nStatus: Confirmed.`);
-            };
+            // --- UI COMPONENTS ---
+            const Navbar = () => (
+                <nav className="flex items-center justify-between p-6 max-w-7xl mx-auto w-full">
+                    <div className="flex items-center gap-3 cursor-pointer" onClick={() => {setIsBooking(false); setView('client');}}>
+                        <div className="w-8 h-8 bg-white rounded-md flex items-center justify-center text-black font-bold text-xl">
+                            🪐
+                        </div>
+                        <span className="text-xl font-bold tracking-tight text-white">Astro<span className="text-brand-muted">Veda</span></span>
+                    </div>
+                    <div className="hidden md:flex items-center gap-8 text-sm font-medium text-brand-muted">
+                        <a href="#" className="text-white">Home</a>
+                        <a href="#" className="hover:text-white transition">Support</a>
+                        <button onClick={() => setView('admin')} className="flex items-center gap-2 hover:text-white transition">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
+                            Admin Login
+                        </button>
+                    </div>
+                </nav>
+            );
 
-            const handleReject = (id) => {
-                setAppointments(appointments.map(app => app.id === id ? { ...app, status: 'Rejected' } : app));
-                alert(`Rejection Email Sent.\nIncluded Support Email: support@astroveda.com\nIncluded Contact: +91 9999999999`);
-            };
-
-            // --- CLIENT VIEWS ---
-            const renderClient = () => (
-                <div className="min-h-screen flex flex-col fade-in">
-                    {/* Header */}
-                    <header className="p-5 border-b border-slate-800 flex justify-between items-center bg-brand-dark/90 sticky top-0 z-50">
-                        <h1 className="text-2xl font-bold tracking-widest text-brand-cyan">ASTRO VEDA</h1>
-                        {step === 0 && (
-                            <button onClick={() => setStep(1)} className="px-5 py-2 bg-brand-cyan hover:bg-brand-cyanHover text-white font-semibold rounded-full shadow-[0_0_15px_rgba(6,182,212,0.4)] transition-all">
-                                Book Now (₹499)
-                            </button>
-                        )}
-                    </header>
-
-                    <main className="flex-grow max-w-5xl mx-auto p-6 w-full mt-8">
-                        
-                        {/* STEP 0: Landing */}
-                        {step === 0 && (
-                            <div className="space-y-16 fade-in">
-                                <div className="text-center space-y-4">
-                                    <h2 className="text-4xl md:text-5xl font-extrabold text-white">Unlock Your Cosmic Path</h2>
-                                    <p className="text-lg text-slate-400 max-w-2xl mx-auto">Experience a peaceful, modern approach to ancient wisdom. Book your personalized astrology reading today.</p>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                    <div className="bg-brand-card p-8 rounded-2xl border border-slate-700 text-center">
-                                        <h3 className="text-3xl font-bold text-brand-cyan mb-2">30+ Years</h3>
-                                        <p className="text-slate-400">Of deep experience and trusted astrological guidance.</p>
-                                    </div>
-                                    <div className="bg-brand-card p-8 rounded-2xl border border-slate-700 text-center">
-                                        <h3 className="text-3xl font-bold text-brand-cyan mb-2">5000+</h3>
-                                        <p className="text-slate-400">People provided with life-changing insights and clarity.</p>
-                                    </div>
-                                    <div className="bg-brand-card p-8 rounded-2xl border border-slate-700 text-center">
-                                        <h3 className="text-2xl font-bold text-brand-cyan mb-2">Unique Method</h3>
-                                        <p className="text-slate-400">A different, highly accurate analysis tailored to you.</p>
-                                    </div>
-                                </div>
-                                <div className="flex justify-center">
-                                    <button onClick={() => setStep(1)} className="px-10 py-4 bg-brand-cyan hover:bg-brand-cyanHover text-white text-lg font-bold rounded-full shadow-[0_0_20px_rgba(6,182,212,0.5)] transition-all">
-                                        Start 3-Step Booking Process
-                                    </button>
-                                </div>
+            // The 3-Step Booking Modal
+            const BookingModal = () => (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm fade-in">
+                    <div className="bg-[#0a0a0a] border border-[#1f1f1f] rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl slide-up">
+                        {/* Modal Header */}
+                        <div className="p-6 border-b border-[#1f1f1f] flex justify-between items-center bg-[#050505]">
+                            <div>
+                                <h2 className="text-xl font-bold text-white">Book Appointment</h2>
+                                <p className="text-sm text-brand-muted mt-1">Step {step} of 3</p>
                             </div>
-                        )}
+                            <button onClick={() => setIsBooking(false)} className="text-brand-muted hover:text-white">
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            </button>
+                        </div>
 
-                        {/* STEP 1: Email & OTP */}
-                        {step === 1 && (
-                            <div className="max-w-md mx-auto bg-brand-card p-8 rounded-2xl border border-slate-700 shadow-xl fade-in">
-                                <div className="flex items-center justify-between mb-6">
-                                    <h2 className="text-2xl font-bold text-white">Step 1: Verification</h2>
-                                    <span className="text-xs font-bold px-2 py-1 bg-slate-800 text-brand-cyan rounded">1 of 3</span>
-                                </div>
-                                <div className="space-y-5">
+                        <div className="p-8">
+                            {/* STEP 1: OTP */}
+                            {step === 1 && (
+                                <form onSubmit={otpSent ? handleVerifyOTP : handleSendOTP} className="space-y-5 fade-in">
                                     <div>
-                                        <label className="block text-sm text-slate-400 mb-1">Email Address</label>
-                                        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-brand-dark border border-slate-600 rounded-lg p-3 text-white focus:outline-none focus:border-brand-cyan" placeholder="you@example.com" />
+                                        <label className="block text-sm font-medium text-brand-muted mb-2">Email Address</label>
+                                        <input type="email" required value={email} onChange={(e)=>setEmail(e.target.value)} disabled={otpSent} className="w-full bg-[#111] border border-[#222] rounded-xl p-4 text-white focus:outline-none focus:border-brand-accent transition-colors" placeholder="Enter your email" />
                                     </div>
-                                    {!otpSent ? (
-                                        <button onClick={() => setOtpSent(true)} className="w-full py-3 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-lg transition-colors">Send OTP</button>
-                                    ) : (
-                                        <div className="fade-in space-y-4">
-                                            <div>
-                                                <label className="block text-sm text-slate-400 mb-1">Enter OTP sent to Email</label>
-                                                <input type="text" className="w-full bg-brand-dark border border-slate-600 rounded-lg p-3 text-white focus:outline-none focus:border-brand-cyan" placeholder="123456" />
-                                            </div>
-                                            <button onClick={() => setStep(2)} className="w-full py-3 bg-brand-cyan hover:bg-brand-cyanHover text-white font-bold rounded-lg shadow-[0_0_15px_rgba(6,182,212,0.4)] transition-all">Verify & Next</button>
+                                    {otpSent && (
+                                        <div className="fade-in">
+                                            <label className="block text-sm font-medium text-brand-muted mb-2">6-Digit OTP</label>
+                                            <input type="text" required maxLength="6" value={userOtp} onChange={(e)=>setUserOtp(e.target.value)} className="w-full bg-[#111] border border-[#222] rounded-xl p-4 text-white focus:outline-none focus:border-brand-accent transition-colors text-center tracking-widest text-xl" placeholder="••••••" />
                                         </div>
                                     )}
-                                </div>
-                            </div>
-                        )}
+                                    <button type="submit" className="w-full py-4 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition-colors">
+                                        {otpSent ? "Verify & Continue" : "Send Verification Code"}
+                                    </button>
+                                </form>
+                            )}
 
-                        {/* STEP 2: Date & Time */}
-                        {step === 2 && (
-                            <div className="max-w-md mx-auto bg-brand-card p-8 rounded-2xl border border-slate-700 shadow-xl fade-in">
-                                <div className="flex items-center justify-between mb-6">
-                                    <h2 className="text-2xl font-bold text-white">Step 2: Schedule</h2>
-                                    <span className="text-xs font-bold px-2 py-1 bg-slate-800 text-brand-cyan rounded">2 of 3</span>
-                                </div>
-                                <div className="space-y-5">
+                            {/* STEP 2: SCHEDULE */}
+                            {step === 2 && (
+                                <div className="space-y-5 fade-in">
                                     <div>
-                                        <label className="block text-sm text-slate-400 mb-1">Select Date</label>
-                                        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full bg-brand-dark border border-slate-600 rounded-lg p-3 text-white focus:outline-none focus:border-brand-cyan" />
+                                        <label className="block text-sm font-medium text-brand-muted mb-2">Select Date</label>
+                                        <input type="date" required value={date} onChange={(e)=>setDate(e.target.value)} className="w-full bg-[#111] border border-[#222] rounded-xl p-4 text-white focus:outline-none focus:border-brand-accent transition-colors [color-scheme:dark]" />
                                     </div>
                                     <div>
-                                        <label className="block text-sm text-slate-400 mb-1">Select Time Slot</label>
-                                        <select value={time} onChange={(e) => setTime(e.target.value)} className="w-full bg-brand-dark border border-slate-600 rounded-lg p-3 text-white focus:outline-none focus:border-brand-cyan">
-                                            <option value="">Choose a time...</option>
-                                            <option value="10:00 AM">10:00 AM - 11:00 AM</option>
-                                            <option value="02:00 PM">02:00 PM - 03:00 PM</option>
-                                            <option value="06:00 PM">06:00 PM - 07:00 PM</option>
+                                        <label className="block text-sm font-medium text-brand-muted mb-2">Select Time</label>
+                                        <select required value={time} onChange={(e)=>setTime(e.target.value)} className="w-full bg-[#111] border border-[#222] rounded-xl p-4 text-white focus:outline-none focus:border-brand-accent transition-colors">
+                                            <option value="">Choose time slot...</option>
+                                            <option value="10:00 AM">10:00 AM</option>
+                                            <option value="02:00 PM">02:00 PM</option>
+                                            <option value="06:00 PM">06:00 PM</option>
                                         </select>
                                     </div>
-                                    <div className="flex gap-3 pt-2">
-                                        <button onClick={() => setStep(1)} className="w-1/3 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors">Back</button>
-                                        <button onClick={() => setStep(3)} className="w-2/3 py-3 bg-brand-cyan hover:bg-brand-cyanHover text-white font-bold rounded-lg shadow-[0_0_15px_rgba(6,182,212,0.4)] transition-all">Proceed to Pay</button>
+                                    <div className="flex gap-4 pt-2">
+                                        <button onClick={() => setStep(1)} className="w-1/3 py-4 bg-[#111] border border-[#222] text-white font-bold rounded-xl hover:bg-[#222] transition-colors">Back</button>
+                                        <button onClick={() => { if(date && time) setStep(3); else alert('Select date and time'); }} className="w-2/3 py-4 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition-colors">Proceed to Pay</button>
                                     </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
 
-                        {/* STEP 3: Payment */}
-                        {step === 3 && (
-                            <div className="max-w-lg mx-auto bg-brand-card p-8 rounded-2xl border border-slate-700 shadow-xl fade-in">
-                                <div className="flex items-center justify-between mb-2">
-                                    <h2 className="text-2xl font-bold text-white">Step 3: Payment</h2>
-                                    <span className="text-xs font-bold px-2 py-1 bg-slate-800 text-brand-cyan rounded">3 of 3</span>
-                                </div>
-                                <p className="text-slate-400 mb-6">Consultation Fee: <span className="text-brand-cyan font-bold text-xl">₹499</span></p>
-                                
-                                <div className="bg-brand-dark p-6 rounded-xl border border-slate-600 mb-6 text-center">
-                                    <div className="w-40 h-40 bg-white mx-auto mb-3 rounded-lg flex items-center justify-center text-slate-800 font-bold border-4 border-brand-cyan">
-                                        SCAN QR
+                            {/* STEP 3: PAYMENT */}
+                            {step === 3 && (
+                                <form onSubmit={(e) => { e.preventDefault(); alert('Order Placed! Admin will review your payment.'); setIsBooking(false); setStep(1); }} className="space-y-5 fade-in">
+                                    
+                                    <div className="bg-[#111] p-4 rounded-xl border border-[#222] flex items-center justify-between">
+                                        <span className="text-brand-muted">Total Amount</span>
+                                        <span className="text-2xl font-bold text-white">₹499</span>
                                     </div>
-                                    <p className="text-sm text-slate-400">Pay via any UPI App</p>
-                                    <p className="text-sm font-bold text-brand-cyan mt-1">UPI ID: astroveda@upi</p>
-                                </div>
 
-                                <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); alert('Booking Request Sent to Admin!'); setStep(0); }}>
+                                    <div className="text-center py-4">
+                                        <div className="w-32 h-32 bg-white mx-auto rounded-xl flex items-center justify-center text-black font-bold mb-3 border-4 border-brand-accent">
+                                            QR CODE
+                                        </div>
+                                        <p className="text-sm font-bold text-brand-accent">UPI: astroveda@ybl</p>
+                                    </div>
+
                                     <div>
-                                        <label className="block text-sm text-slate-400 mb-1">WhatsApp / Contact Number</label>
+                                        <label className="block text-sm font-medium text-brand-muted mb-2">Contact Number</label>
                                         <div className="flex">
-                                            <span className="bg-slate-800 border border-slate-600 border-r-0 rounded-l-lg p-3 text-slate-300 font-medium">+91</span>
-                                            <input type="tel" pattern="[0-9]{10}" maxLength="10" required value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full bg-brand-dark border border-slate-600 rounded-r-lg p-3 text-white focus:outline-none focus:border-brand-cyan" placeholder="10-digit number" />
+                                            <span className="bg-[#111] border border-[#222] border-r-0 rounded-l-xl p-4 text-brand-muted">+91</span>
+                                            <input type="tel" pattern="[0-9]{10}" maxLength="10" required value={phone} onChange={(e)=>setPhone(e.target.value)} className="w-full bg-[#111] border border-[#222] rounded-r-xl p-4 text-white focus:outline-none focus:border-brand-accent" placeholder="10-digit number" />
                                         </div>
                                     </div>
+
                                     <div>
-                                        <label className="block text-sm text-slate-400 mb-1">Transaction ID (TXID)</label>
-                                        <input type="text" required value={txid} onChange={(e) => setTxid(e.target.value)} className="w-full bg-brand-dark border border-slate-600 rounded-lg p-3 text-white focus:outline-none focus:border-brand-cyan" placeholder="Enter UPI Reference ID" />
+                                        <label className="block text-sm font-medium text-brand-muted mb-2">Transaction ID (TXID)</label>
+                                        <input type="text" required value={txid} onChange={(e)=>setTxid(e.target.value)} className="w-full bg-[#111] border border-[#222] rounded-xl p-4 text-white focus:outline-none focus:border-brand-accent" placeholder="Enter Reference ID" />
                                     </div>
+
                                     <div>
-                                        <label className="block text-sm text-slate-400 mb-1">Payment Screenshot Proof</label>
-                                        <input type="file" accept="image/*" required className="w-full bg-brand-dark border border-slate-600 rounded-lg p-2 text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-cyan-900 file:text-brand-cyan hover:file:bg-cyan-800" />
+                                        <label className="block text-sm font-medium text-brand-muted mb-2">Upload Screenshot</label>
+                                        <input type="file" accept="image/*" required className="w-full text-sm text-brand-muted file:mr-4 file:py-3 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-[#111] file:text-white hover:file:bg-[#222] file:cursor-pointer" />
                                     </div>
-                                    <div className="flex gap-3 pt-4">
-                                        <button type="button" onClick={() => setStep(2)} className="w-1/3 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors">Back</button>
-                                        <button type="submit" className="w-2/3 py-3 bg-brand-cyan hover:bg-brand-cyanHover text-white font-bold rounded-lg shadow-[0_0_15px_rgba(6,182,212,0.4)] transition-all">Confirm & Submit</button>
+
+                                    <div className="flex gap-4 pt-2">
+                                        <button type="button" onClick={() => setStep(2)} className="w-1/3 py-4 bg-[#111] border border-[#222] text-white font-bold rounded-xl hover:bg-[#222] transition-colors">Back</button>
+                                        <button type="submit" className="w-2/3 py-4 bg-brand-accent text-black font-bold rounded-xl hover:bg-yellow-400 transition-colors">Confirm Order</button>
                                     </div>
                                 </form>
-                            </div>
-                        )}
-                    </main>
-
-                    {/* Footer / Secret Admin Link */}
-                    <footer className="p-6 text-center text-slate-600 text-sm mt-auto">
-                        © 2026 Astro Veda. All rights reserved. <br/>
-                        <button onClick={() => setView('admin')} className="mt-2 hover:text-brand-cyan transition-colors">Admin Access</button>
-                    </footer>
+                            )}
+                        </div>
+                    </div>
                 </div>
             );
 
-            // --- ADMIN VIEWS ---
+            // Client Landing Page
+            const renderClient = () => (
+                <div className="min-h-screen flex flex-col">
+                    <Navbar />
+                    
+                    <main className="flex-grow flex flex-col items-center justify-center px-6 py-12 w-full max-w-7xl mx-auto">
+                        
+                        {/* Hero Section (RBXPrime Style) */}
+                        <div className="text-center w-full max-w-4xl mx-auto mb-16 slide-up">
+                            <div className="flex flex-wrap items-center justify-center gap-3 mb-8">
+                                <span className="rounded-full bg-[#111] border border-[#222] px-4 py-1.5 text-xs font-medium text-brand-muted flex items-center gap-2">
+                                    <span className="w-2 h-2 rounded-full bg-green-500"></span> 5000+ Happy Customers
+                                </span>
+                                <span className="rounded-full bg-[#111] border border-[#222] px-4 py-1.5 text-xs font-medium text-brand-muted flex items-center gap-2">
+                                    ⭐ 30+ Years Experience
+                                </span>
+                            </div>
+                            
+                            <h1 className="text-5xl md:text-7xl font-black text-white tracking-tight mb-6 leading-tight">
+                                Accurate <span className="text-brand-accent">Astrology</span>
+                            </h1>
+                            <p className="text-lg md:text-xl text-brand-muted max-w-2xl mx-auto mb-10">
+                                Instant clarity and guidance. A unique and highly accurate method of analysis differing from traditional approaches.
+                            </p>
+                            
+                            {/* The "Deals" Grid matching your screenshot */}
+                            <div className="text-left w-full mt-16">
+                                <h2 className="text-3xl font-bold mb-2">Current Deals</h2>
+                                <p className="text-brand-muted mb-8">Limited time offers. Prices in INR.</p>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    
+                                    {/* Free Offer Card */}
+                                    <div className="bg-gradient-to-b from-[#1a1500] to-[#0a0a0a] border border-yellow-900/50 rounded-3xl p-6 relative flex flex-col shadow-[0_0_30px_rgba(250,204,21,0.05)]">
+                                        <div className="absolute top-4 right-4 bg-white text-black text-[10px] font-bold px-3 py-1 rounded-full">NEW USER OFFER</div>
+                                        <div className="w-12 h-12 bg-yellow-500/10 rounded-xl mb-4 flex items-center justify-center text-brand-accent text-2xl">✨</div>
+                                        <div className="text-4xl font-black text-white mb-2">FREE</div>
+                                        <p className="text-xs text-brand-muted mb-8">Basic initial chart generation.</p>
+                                        <button className="mt-auto w-full bg-brand-accent text-black font-bold py-3.5 rounded-xl hover:bg-yellow-400 transition shadow-[0_0_15px_rgba(250,204,21,0.2)]">Claim Now</button>
+                                    </div>
+
+                                    {/* Main Booking Card (Best Seller) */}
+                                    <div className="bg-[#0a0a0a] border border-[#222] rounded-3xl p-6 relative flex flex-col hover:border-[#333] transition-colors">
+                                        <div className="absolute top-0 right-6 bg-[#222] text-[10px] font-bold px-3 py-1 rounded-b-md text-brand-muted">BEST SELLER</div>
+                                        <div className="flex justify-between items-start mb-4">
+                                            <div className="w-12 h-12 bg-[#111] rounded-xl flex items-center justify-center text-white text-2xl">🪐</div>
+                                            <div className="text-right">
+                                                <div className="text-brand-muted line-through text-xs font-medium">₹999</div>
+                                                <div className="text-3xl font-black text-white">₹499</div>
+                                            </div>
+                                        </div>
+                                        <div className="text-2xl font-bold text-white mb-1">Full Reading</div>
+                                        <div className="text-green-500 text-xs font-bold mb-8 flex items-center gap-1">⚡ + Priority Booking</div>
+                                        <button onClick={() => setIsBooking(true)} className="mt-auto w-full bg-white text-black font-bold py-3.5 rounded-xl hover:bg-gray-200 transition">Book Appointment</button>
+                                    </div>
+
+                                    {/* Advanced Card */}
+                                    <div className="bg-[#0a0a0a] border border-[#222] rounded-3xl p-6 relative flex flex-col hover:border-[#333] transition-colors">
+                                        <div className="flex justify-between items-start mb-4">
+                                            <div className="w-12 h-12 bg-[#111] rounded-xl flex items-center justify-center text-white text-2xl">🧿</div>
+                                            <div className="text-right">
+                                                <div className="text-brand-muted line-through text-xs font-medium">₹2499</div>
+                                                <div className="text-3xl font-black text-white">₹1499</div>
+                                            </div>
+                                        </div>
+                                        <div className="text-2xl font-bold text-white mb-1">Family Kundli</div>
+                                        <div className="text-green-500 text-xs font-bold mb-8 flex items-center gap-1">⚡ + Deep Analysis</div>
+                                        <button onClick={() => setIsBooking(true)} className="mt-auto w-full bg-white text-black font-bold py-3.5 rounded-xl hover:bg-gray-200 transition">Book Appointment</button>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Feature Bottom Row */}
+                        <div className="w-full max-w-5xl border-t border-[#1f1f1f] pt-12 mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 text-center pb-12">
+                            <div>
+                                <div className="w-12 h-12 mx-auto border border-[#222] rounded-xl flex items-center justify-center mb-4">⚡</div>
+                                <h3 className="font-bold text-white mb-2">Instant Confirmation</h3>
+                                <p className="text-sm text-brand-muted">Appointments are transferred to your dashboard within seconds.</p>
+                            </div>
+                            <div>
+                                <div className="w-12 h-12 mx-auto border border-[#222] rounded-xl flex items-center justify-center mb-4">🛡️</div>
+                                <h3 className="font-bold text-white mb-2">Secure & Safe</h3>
+                                <p className="text-sm text-brand-muted">Private and confidential. We only need your birth details.</p>
+                            </div>
+                            <div>
+                                <div className="w-12 h-12 mx-auto border border-[#222] rounded-xl flex items-center justify-center mb-4">⭐</div>
+                                <h3 className="font-bold text-white mb-2">Highly Accurate</h3>
+                                <p className="text-sm text-brand-muted">Enjoy our unique analysis method different from the rest.</p>
+                            </div>
+                        </div>
+
+                    </main>
+                    {isBooking && <BookingModal />}
+                </div>
+            );
+
+            // Admin Panel
             const renderAdmin = () => {
                 if (!isAdminLoggedIn) {
                     return (
-                        <div className="min-h-screen flex items-center justify-center fade-in">
-                            <form onSubmit={handleAdminLogin} className="bg-brand-card p-8 rounded-2xl border border-slate-700 shadow-xl w-96">
-                                <h2 className="text-2xl font-bold text-brand-cyan mb-6 text-center">Admin Portal</h2>
+                        <div className="min-h-screen flex items-center justify-center bg-[#000] p-4">
+                            <form onSubmit={handleAdminLogin} className="bg-[#0a0a0a] border border-[#1f1f1f] p-8 rounded-2xl w-full max-w-md shadow-2xl">
+                                <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-black font-bold text-2xl mx-auto mb-6">🪐</div>
+                                <h2 className="text-2xl font-bold text-white mb-6 text-center">Admin Access</h2>
                                 <div className="space-y-4">
-                                    <input type="text" value={adminId} onChange={(e)=>setAdminId(e.target.value)} placeholder="Admin ID" className="w-full bg-brand-dark border border-slate-600 rounded-lg p-3 text-white focus:border-brand-cyan focus:outline-none" />
-                                    <input type="password" value={adminPass} onChange={(e)=>setAdminPass(e.target.value)} placeholder="Password" className="w-full bg-brand-dark border border-slate-600 rounded-lg p-3 text-white focus:border-brand-cyan focus:outline-none" />
-                                    <button type="submit" className="w-full py-3 bg-brand-cyan text-white font-bold rounded-lg">Login</button>
-                                    <button type="button" onClick={() => setView('client')} className="w-full py-2 text-slate-400 hover:text-white text-sm">Return to Website</button>
+                                    <input type="text" value={adminId} onChange={(e)=>setAdminId(e.target.value)} placeholder="Admin ID" className="w-full bg-[#111] border border-[#222] rounded-xl p-4 text-white focus:outline-none focus:border-brand-accent" />
+                                    <input type="password" value={adminPass} onChange={(e)=>setAdminPass(e.target.value)} placeholder="Password" className="w-full bg-[#111] border border-[#222] rounded-xl p-4 text-white focus:outline-none focus:border-brand-accent" />
+                                    <button type="submit" className="w-full py-4 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition">Login to Dashboard</button>
+                                    <button type="button" onClick={() => setView('client')} className="w-full py-2 text-brand-muted hover:text-white text-sm">Back to Home</button>
                                 </div>
                             </form>
                         </div>
@@ -249,47 +360,51 @@
                 }
 
                 return (
-                    <div className="min-h-screen p-8 fade-in">
-                        <div className="flex justify-between items-center mb-8">
-                            <h2 className="text-3xl font-bold text-brand-cyan">Dashboard / Appointments</h2>
-                            <button onClick={() => {setIsAdminLoggedIn(false); setView('client');}} className="px-4 py-2 bg-slate-800 text-white rounded-lg">Logout</button>
-                        </div>
-                        
-                        <div className="bg-brand-card rounded-xl border border-slate-700 overflow-hidden">
-                            <table className="w-full text-left border-collapse">
-                                <thead>
-                                    <tr className="bg-slate-800 text-slate-300 text-sm uppercase tracking-wider">
-                                        <th className="p-4">Order ID</th>
-                                        <th className="p-4">Contact</th>
-                                        <th className="p-4">Date & Time</th>
-                                        <th className="p-4">TXID / Proof</th>
-                                        <th className="p-4">Status</th>
-                                        <th className="p-4">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="text-sm">
-                                    {appointments.map((app) => (
-                                        <tr key={app.id} className="border-t border-slate-700 hover:bg-slate-800/50">
-                                            <td className="p-4 font-bold text-white">{app.id}</td>
-                                            <td className="p-4 text-slate-300">{app.email}<br/>+91 {app.phone}</td>
-                                            <td className="p-4 text-brand-cyan font-medium">
-                                                <input type="date" defaultValue={app.date} className="bg-brand-dark border border-slate-600 rounded px-2 py-1 mb-1 text-xs w-full"/>
-                                                <input type="time" defaultValue="10:00" className="bg-brand-dark border border-slate-600 rounded px-2 py-1 text-xs w-full"/>
-                                            </td>
-                                            <td className="p-4 text-slate-300">{app.txid} <br/><a href="#" className="text-brand-cyan text-xs underline">View Image</a></td>
-                                            <td className="p-4">
-                                                <span className={`px-2 py-1 rounded text-xs font-bold ${app.status === 'Approved' ? 'bg-green-900 text-green-300' : app.status === 'Rejected' ? 'bg-red-900 text-red-300' : 'bg-yellow-900 text-yellow-300'}`}>
-                                                    {app.status}
-                                                </span>
-                                            </td>
-                                            <td className="p-4 flex gap-2">
-                                                <button onClick={() => handleApprove(app.id)} className="px-3 py-1 bg-green-600 hover:bg-green-500 text-white rounded text-xs transition-colors">Approve</button>
-                                                <button onClick={() => handleReject(app.id)} className="px-3 py-1 bg-red-600 hover:bg-red-500 text-white rounded text-xs transition-colors">Reject</button>
-                                            </td>
+                    <div className="min-h-screen bg-[#000] p-8">
+                        <div className="max-w-7xl mx-auto">
+                            <div className="flex justify-between items-center mb-8">
+                                <h2 className="text-3xl font-black text-white">Dashboard <span className="text-brand-accent">.</span></h2>
+                                <button onClick={() => {setIsAdminLoggedIn(false); setView('client');}} className="px-5 py-2.5 bg-[#111] border border-[#222] text-white rounded-xl hover:bg-[#222] text-sm font-bold">Log Out</button>
+                            </div>
+                            
+                            <div className="bg-[#0a0a0a] rounded-2xl border border-[#1f1f1f] overflow-hidden">
+                                <table className="w-full text-left">
+                                    <thead>
+                                        <tr className="bg-[#111] border-b border-[#222] text-brand-muted text-xs uppercase tracking-wider">
+                                            <th className="p-5 font-semibold">Order ID</th>
+                                            <th className="p-5 font-semibold">Contact Details</th>
+                                            <th className="p-5 font-semibold">Date & Time</th>
+                                            <th className="p-5 font-semibold">Payment Info</th>
+                                            <th className="p-5 font-semibold">Status</th>
+                                            <th className="p-5 font-semibold">Actions</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody className="text-sm">
+                                        {appointments.map((app) => (
+                                            <tr key={app.id} className="border-b border-[#1f1f1f] last:border-0 hover:bg-[#111]/50 transition-colors">
+                                                <td className="p-5 font-bold text-white">{app.id}</td>
+                                                <td className="p-5 text-brand-muted">{app.email}<br/><span className="text-white">+91 {app.phone}</span></td>
+                                                <td className="p-5">
+                                                    <input type="date" defaultValue={app.date} className="bg-[#111] border border-[#222] rounded px-3 py-1.5 mb-2 text-xs w-full text-white [color-scheme:dark]"/>
+                                                    <input type="time" defaultValue="10:00" className="bg-[#111] border border-[#222] rounded px-3 py-1.5 text-xs w-full text-white [color-scheme:dark]"/>
+                                                </td>
+                                                <td className="p-5 text-brand-muted">{app.txid} <br/><a href="#" className="text-brand-accent text-xs hover:underline mt-1 inline-block">View Screenshot</a></td>
+                                                <td className="p-5">
+                                                    <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-yellow-500/10 text-brand-accent border border-yellow-500/20 uppercase tracking-wide">
+                                                        {app.status}
+                                                    </span>
+                                                </td>
+                                                <td className="p-5">
+                                                    <div className="flex gap-2">
+                                                        <button className="px-4 py-2 bg-white text-black hover:bg-gray-200 font-bold rounded-lg text-xs transition-colors">Approve</button>
+                                                        <button className="px-4 py-2 bg-[#222] text-white hover:bg-[#333] font-bold rounded-lg text-xs transition-colors">Reject</button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 );
