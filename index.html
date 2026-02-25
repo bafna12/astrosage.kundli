@@ -53,7 +53,6 @@
         const { useState, useEffect } = React;
 
         // --- EMAILJS INITIALIZATION ---
-        // Your actual Public Key is placed here
         emailjs.init("8r2tapCdRmVdIbFQb"); 
 
         function App() {
@@ -88,18 +87,18 @@
                 setGeneratedOtp(newOtp);
                 
                 // IMPORTANT: Replace "YOUR_SERVICE_ID_HERE" with your actual Service ID (e.g., "service_abcd123")
+                // You can find your real Service ID in EmailJS Dashboard -> "Email Services" tab
                 emailjs.send("YOUR_SERVICE_ID_HERE", "template_hod7wir", {
                     to_email: email,
                     otp_code: newOtp,
                 }).then(() => {
                     setOtpSent(true);
-                    alert("OTP Sent to " + email);
+                    alert("Success! The OTP was sent to " + email);
                 }).catch((err) => {
                     console.error("EMAILJS ERROR:", err);
-                    // TEST MODE: Even if email fails, show the bubble so you can test the website!
-                    console.log("TESTING MODE OTP IS:", newOtp);
-                    alert("Email failed to send (Check Service ID). However, the OTP bubble is open for testing. Press F12 to see your OTP in the console.");
                     setOtpSent(true); 
+                    // TEST MODE: Shows the OTP right on the screen if the email setup is wrong!
+                    alert(`Email setup is still missing the Service ID, so the email didn't send.\n\nHOWEVER, your TEST OTP is: ${newOtp}\n\nYou can enter this to continue testing the website!`);
                 });
             };
 
