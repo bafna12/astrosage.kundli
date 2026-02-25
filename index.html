@@ -79,27 +79,34 @@
             ]);
 
             // --- OTP LOGIC via EmailJS ---
-            const handleSendOTP = (e) => {
+            const handleSendOTP = async (e) => {
                 e.preventDefault();
                 if(!email) return alert("Please enter an email");
                 
                 const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
                 setGeneratedOtp(newOtp);
                 
-                // IMPORTANT: Replace "YOUR_SERVICE_ID_HERE" with your actual Service ID (e.g., "service_abcd123")
-                // You can find your real Service ID in EmailJS Dashboard -> "Email Services" tab
-                emailjs.send("YOUR_SERVICE_ID_HERE", "template_hod7wir", {
-                    to_email: email,
-                    otp_code: newOtp,
-                }).then(() => {
-                    setOtpSent(true);
-                    alert("Success! The OTP was sent to " + email);
-                }).catch((err) => {
+                // 1. FORCE THE OTP BUBBLE TO OPEN IMMEDIATELY 
+                setOtpSent(true); 
+                
+                // 2. Try sending the email
+                try {
+                    await emailjs.send("YOUR_SERVICE_ID_HERE", "template_hod7wir", {
+                        to_email: email,
+                        otp_code: newOtp,
+                    });
+                    
+                    // If successful, wait half a second so the UI loads, then alert
+                    setTimeout(() => alert("Success! The OTP was sent to " + email), 500);
+
+                } catch (err) {
                     console.error("EMAILJS ERROR:", err);
-                    setOtpSent(true); 
-                    // TEST MODE: Shows the OTP right on the screen if the email setup is wrong!
-                    alert(`Email setup is still missing the Service ID, so the email didn't send.\n\nHOWEVER, your TEST OTP is: ${newOtp}\n\nYou can enter this to continue testing the website!`);
-                });
+                    
+                    // If it fails, the box is ALREADY open. Give them the code!
+                    setTimeout(() => {
+                        alert(`Email setup is missing the Service ID, so the email didn't send.\n\nHOWEVER, your TEST OTP is: ${newOtp}\n\nYou can enter this in the box that just appeared to continue testing!`);
+                    }, 500);
+                }
             };
 
             const handleVerifyOTP = (e) => {
@@ -189,8 +196,8 @@
                                         </select>
                                     </div>
                                     <div className="flex gap-4 pt-2">
-                                        <button onClick={() => setStep(1)} className="w-1/3 py-4 bg-[#111] border border-[#222] text-white font-bold rounded-xl hover:bg-[#222] transition-colors">Back</button>
-                                        <button onClick={() => { if(date && time) setStep(3); else alert('Select date and time'); }} className="w-2/3 py-4 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition-colors">Proceed to Pay</button>
+                                        <button type="button" onClick={() => setStep(1)} className="w-1/3 py-4 bg-[#111] border border-[#222] text-white font-bold rounded-xl hover:bg-[#222] transition-colors">Back</button>
+                                        <button type="button" onClick={() => { if(date && time) setStep(3); else alert('Select date and time'); }} className="w-2/3 py-4 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition-colors">Proceed to Pay</button>
                                     </div>
                                 </div>
                             )}
