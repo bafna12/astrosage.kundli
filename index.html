@@ -53,7 +53,6 @@
         const { useState, useEffect } = React;
 
         // --- EMAILJS INITIALIZATION ---
-        // You will replace these with your actual keys later
         emailjs.init("8r2tapCdRmVdIbFQb"); 
 
         function App() {
@@ -88,8 +87,8 @@
                 const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
                 setGeneratedOtp(newOtp);
                 
-                // Send via EmailJS (Uncomment and configure once you have keys)
-               
+                // Send via EmailJS 
+                // NOTE: If "astrosage.kundli" doesn't work, replace it with your Service ID starting with "service_"
                 emailjs.send("astrosage.kundli", "template_hod7wir", {
                     to_email: email,
                     otp_code: newOtp,
@@ -100,6 +99,7 @@
                     console.error(err);
                     alert("Failed to send OTP. Check console.");
                 });
+            }; // <--- THIS WAS THE MISSING BRACKET!
 
             const handleVerifyOTP = (e) => {
                 e.preventDefault();
