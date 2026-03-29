@@ -75,12 +75,13 @@
             const [generatedOtp, setGeneratedOtp] = useState('');
             const [userOtp, setUserOtp] = useState('');
             const [otpSent, setOtpSent] = useState(false);
+            const [isSending, setIsSending] = useState(false); // New Loading State
             const [date, setDate] = useState('');
             const [time, setTime] = useState('');
             const [phone, setPhone] = useState('');
             const [txid, setTxid] = useState('');
 
-            // Calculate Today's Date (YYYY-MM-DD) to block past dates
+            // Calculate Today's Date (YYYY-MM-DD) to strictly block past dates
             const today = new Date().toISOString().split('T')[0];
 
             // Admin States
@@ -91,26 +92,37 @@
                 { id: 'ORD-1029', email: 'user@example.com', phone: '9876543210', date: '2026-03-01', time: '10:00 PM', txid: 'UPI123456789', status: 'Pending' }
             ]);
 
-            // --- OTP LOGIC via EmailJS ---
+            // --- PROFESSIONAL OTP LOGIC ---
             const handleSendOTP = async (e) => {
                 e.preventDefault();
-                if(!email) return alert("Please enter an email");
                 
+                // 1. Strict Email Format Validation
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if(!email || !emailRegex.test(email)) {
+                    return alert("Please enter a valid and correct email address.");
+                }
+                
+                setIsSending(true); // Start Loading
                 const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
                 setGeneratedOtp(newOtp);
-                setOtpSent(true); 
                 
                 try {
+                    // 2. Attempt to securely send the email
                     await emailjs.send("service_z2jyz5c", "template_hod7wir", {
                         to_email: email,
                         otp_code: newOtp,
                     });
-                    setTimeout(() => alert("Success! The OTP was sent to " + email), 500);
+                    
+                    // 3. Only show OTP box if email is successful
+                    setOtpSent(true);
+                    setIsSending(false);
+                    setTimeout(() => alert("Success! A verification code was sent to " + email), 200);
+
                 } catch (err) {
                     console.error("EMAILJS ERROR:", err);
-                    setTimeout(() => {
-                        alert(`Oops! EmailJS had an error.\n\nHOWEVER, your TEST OTP is: ${newOtp}\n\nYou can enter this in the box that just appeared to continue testing!`);
-                    }, 500);
+                    setIsSending(false);
+                    // 4. Polite error handling (No test codes)
+                    alert("Failed to send the verification code. Please ensure you entered a real email address and try again.");
                 }
             };
 
@@ -119,7 +131,7 @@
                 if (userOtp === generatedOtp) {
                     setStep(2);
                 } else {
-                    alert("Incorrect OTP");
+                    alert("Incorrect Verification Code. Please try again.");
                 }
             };
 
@@ -132,24 +144,136 @@
                 }
             };
 
-            // --- CLIENT VIEWS ---
+            // --- UI COMPONENTS ---
+            // Rendered as a direct function to prevent React typing lag
+            const renderNavbar = () => (
+                <nav className="flex items-center justify-between p-4 md:p-6 max-w-7xl mx-auto w-full relative z-10">
+                    <div className="flex items-center gap-3 cursor-pointer select-none" onDoubleClick={() => setView('admin')} onClick={() => {setIsBooking(false); setView('client');}}>
+                        <div className="w-8 h-8 bg-white rounded-md flex items-center justify-center text-black font-bold text-xl">
+                            🪐
+                        </div>
+                        <span className="text-xl font-bold tracking-tight text-white">Astro<span className="text-brand-muted">Veda</span></span>
+                    </div>
+                    <div className="hidden md:flex items-center gap-8 text-sm font-medium text-brand-muted">
+                        <a href="#" className="text-white">Home</a>
+                        <a href="#" className="hover:text-white transition">Support</a>
+                    </div>
+                </nav>
+            );
+
+            // Rendered as a direct function to prevent React typing lag
+            const renderBookingModal = () => (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm fade-in">
+                    <div className="bg-[#0a0a0a] border border-[#1f1f1f] rounded-2xl w-full max-w-lg overflow-y-auto max-h-[90vh] shadow-2xl slide-up">
+                        <div className="p-5 md:p-6 border-b border-[#1f1f1f] flex justify-between items-center bg-[#050505] sticky top-0 z-20">
+                            <div>
+                                <h2 className="text-lg md:text-xl font-bold text-white">Book Appointment</h2>
+                                <p className="text-xs md:text-sm text-brand-muted mt-1">Step {step} of 3</p>
+                            </div>
+                            <button onClick={() => setIsBooking(false)} className="text-brand-muted hover:text-white p-1">
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            </button>
+                        </div>
+
+                        <div className="p-5 md:p-8">
+                            {/* STEP 1: OTP */}
+                            {step === 1 && (
+                                <form onSubmit={otpSent ? handleVerifyOTP : handleSendOTP} className="space-y-4 md:space-y-5 fade-in">
+                                    <div>
+                                        <label className="block text-xs md:text-sm font-medium text-brand-muted mb-2">Email Address</label>
+                                        <input type="email" required value={email} onChange={(e)=>setEmail(e.target.value)} disabled={otpSent || isSending} className="w-full bg-[#111] border border-[#222] rounded-xl p-3 md:p-4 text-sm md:text-base text-white focus:outline-none focus:border-brand-accent transition-colors disabled:opacity-50" placeholder="Enter your email" />
+                                    </div>
+                                    {otpSent && (
+                                        <div className="fade-in">
+                                            <label className="block text-xs md:text-sm font-medium text-brand-muted mb-2">6-Digit Verification Code</label>
+                                            <input type="text" required maxLength="6" value={userOtp} onChange={(e)=>setUserOtp(e.target.value)} className="w-full bg-[#111] border border-[#222] rounded-xl p-3 md:p-4 text-lg md:text-xl text-white focus:outline-none focus:border-brand-accent transition-colors text-center tracking-widest" placeholder="••••••" />
+                                        </div>
+                                    )}
+                                    <button type="submit" disabled={isSending} className="w-full py-3 md:py-4 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition-colors text-sm md:text-base disabled:opacity-70">
+                                        {isSending ? "Sending..." : (otpSent ? "Verify & Continue" : "Send Verification Code")}
+                                    </button>
+                                </form>
+                            )}
+
+                            {/* STEP 2: SCHEDULE */}
+                            {step === 2 && (
+                                <div className="space-y-4 md:space-y-5 fade-in">
+                                    <div>
+                                        <label className="block text-xs md:text-sm font-medium text-brand-muted mb-2">Select Date</label>
+                                        {/* min={today} blocks past dates securely */}
+                                        <input type="date" min={today} required value={date} onChange={(e)=>setDate(e.target.value)} className="w-full bg-[#111] border border-[#222] rounded-xl p-3 md:p-4 text-sm md:text-base text-white focus:outline-none focus:border-brand-accent transition-colors" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs md:text-sm font-medium text-brand-muted mb-2">Select Evening Time Slot</label>
+                                        <select required value={time} onChange={(e)=>setTime(e.target.value)} className="w-full bg-[#111] border border-[#222] rounded-xl p-3 md:p-4 text-sm md:text-base text-white focus:outline-none focus:border-brand-accent transition-colors">
+                                            <option value="">Choose time slot...</option>
+                                            <option value="08:00 PM">08:00 PM</option>
+                                            <option value="09:00 PM">09:00 PM</option>
+                                            <option value="10:00 PM">10:00 PM</option>
+                                            <option value="11:00 PM">11:00 PM</option>
+                                        </select>
+                                        <p className="text-xs text-brand-accent mt-2 flex items-start gap-1">
+                                            <span className="text-sm">⏳</span> 
+                                            <span><strong>Note:</strong> Every consultation call lasts a maximum of 40 minutes.</span>
+                                        </p>
+                                    </div>
+                                    <div className="flex gap-3 md:gap-4 pt-2">
+                                        <button type="button" onClick={() => setStep(1)} className="w-1/3 py-3 md:py-4 bg-[#111] border border-[#222] text-white font-bold rounded-xl hover:bg-[#222] transition-colors text-sm md:text-base">Back</button>
+                                        <button type="button" onClick={() => { if(date && time) setStep(3); else alert('Please select both a date and a time slot.'); }} className="w-2/3 py-3 md:py-4 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition-colors text-sm md:text-base">Proceed to Pay</button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* STEP 3: PAYMENT */}
+                            {step === 3 && (
+                                <form onSubmit={(e) => { e.preventDefault(); alert('Order Placed! Admin will review your payment.'); setIsBooking(false); setStep(1); }} className="space-y-4 md:space-y-5 fade-in">
+                                    
+                                    <div className="bg-[#111] p-3 md:p-4 rounded-xl border border-[#222] flex items-center justify-between">
+                                        <span className="text-xs md:text-sm text-brand-muted">Total Amount</span>
+                                        <span className="text-xl md:text-2xl font-bold text-brand-accent">₹499</span>
+                                    </div>
+
+                                    <div className="text-center py-2 md:py-4">
+                                        <div className="w-28 h-28 md:w-32 md:h-32 bg-white mx-auto rounded-xl flex items-center justify-center text-black font-bold mb-2 md:mb-3 border-4 border-brand-accent">
+                                            QR CODE
+                                        </div>
+                                        <p className="text-xs md:text-sm font-bold text-brand-accent">UPI: astroveda@ybl</p>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs md:text-sm font-medium text-brand-muted mb-2">WhatsApp / Contact Number</label>
+                                        <div className="flex">
+                                            <span className="bg-[#111] border border-[#222] border-r-0 rounded-l-xl p-3 md:p-4 text-sm md:text-base text-brand-muted">+91</span>
+                                            <input type="tel" pattern="[0-9]{10}" maxLength="10" required value={phone} onChange={(e)=>setPhone(e.target.value)} className="w-full bg-[#111] border border-[#222] rounded-r-xl p-3 md:p-4 text-sm md:text-base text-white focus:outline-none focus:border-brand-accent" placeholder="10-digit number" />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs md:text-sm font-medium text-brand-muted mb-2">Transaction ID (TXID)</label>
+                                        <input type="text" required value={txid} onChange={(e)=>setTxid(e.target.value)} className="w-full bg-[#111] border border-[#222] rounded-xl p-3 md:p-4 text-sm md:text-base text-white focus:outline-none focus:border-brand-accent" placeholder="Enter Reference ID" />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs md:text-sm font-medium text-brand-muted mb-2">Upload Screenshot</label>
+                                        <input type="file" accept="image/*" required className="w-full text-xs md:text-sm text-brand-muted file:mr-3 md:file:mr-4 file:py-2 md:file:py-3 file:px-3 md:file:px-4 file:rounded-xl file:border-0 file:text-xs md:file:text-sm file:font-bold file:bg-[#111] file:text-white hover:file:bg-[#222] file:cursor-pointer" />
+                                    </div>
+
+                                    <div className="flex gap-3 md:gap-4 pt-2">
+                                        <button type="button" onClick={() => setStep(2)} className="w-1/3 py-3 md:py-4 bg-[#111] border border-[#222] text-white font-bold rounded-xl hover:bg-[#222] transition-colors text-sm md:text-base">Back</button>
+                                        <button type="submit" className="w-2/3 py-3 md:py-4 bg-brand-accent text-black font-bold rounded-xl hover:bg-yellow-400 transition-colors text-sm md:text-base">Confirm Order</button>
+                                    </div>
+                                </form>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+
+            // Client Landing Page
             const renderClient = () => (
                 <div className="min-h-screen flex flex-col bg-brand-bg">
-                    {/* NAVBAR */}
-                    <nav className="flex items-center justify-between p-4 md:p-6 max-w-7xl mx-auto w-full relative z-10">
-                        <div className="flex items-center gap-3 cursor-pointer select-none" onDoubleClick={() => setView('admin')} onClick={() => {setIsBooking(false); setView('client');}}>
-                            <div className="w-8 h-8 bg-white rounded-md flex items-center justify-center text-black font-bold text-xl">
-                                🪐
-                            </div>
-                            <span className="text-xl font-bold tracking-tight text-white">Astro<span className="text-brand-muted">Veda</span></span>
-                        </div>
-                        <div className="hidden md:flex items-center gap-8 text-sm font-medium text-brand-muted">
-                            <a href="#" className="text-white">Home</a>
-                            <a href="#" className="hover:text-white transition">Support</a>
-                        </div>
-                    </nav>
+                    {renderNavbar()}
                     
-                    {/* MAIN CONTENT */}
                     <main className="flex-grow flex flex-col items-center justify-start px-4 md:px-6 py-8 md:py-12 w-full max-w-7xl mx-auto relative z-10">
                         <div className="text-center w-full max-w-4xl mx-auto mb-12 md:mb-16 slide-up">
                             <div className="flex flex-wrap items-center justify-center gap-2 md:gap-3 mb-6 md:mb-8">
@@ -168,7 +292,6 @@
                                 Instant clarity and guidance. A unique and highly accurate method of analysis differing from traditional approaches.
                             </p>
                             
-                            {/* Deals Section */}
                             <div className="text-center w-full mt-10 md:mt-16 flex flex-col items-center">
                                 <h2 className="text-2xl md:text-3xl font-bold mb-2">Current Exclusive Deal</h2>
                                 <p className="text-sm md:text-base text-brand-muted mb-6 md:mb-8">Limited time offer. Price in INR.</p>
@@ -193,7 +316,6 @@
                             </div>
                         </div>
 
-                        {/* Feature Bottom Row */}
                         <div className="w-full max-w-5xl border-t border-[#1f1f1f] pt-10 md:pt-12 mt-8 md:mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 text-center pb-12 px-4">
                             <div>
                                 <div className="w-10 h-10 md:w-12 md:h-12 mx-auto border border-[#222] rounded-xl flex items-center justify-center mb-3 md:mb-4 text-brand-accent">⚡</div>
@@ -212,118 +334,11 @@
                             </div>
                         </div>
                     </main>
-
-                    {/* BOOKING MODAL (Inlined to prevent React re-render lagging) */}
-                    {isBooking && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm fade-in">
-                            <div className="bg-[#0a0a0a] border border-[#1f1f1f] rounded-2xl w-full max-w-lg overflow-y-auto max-h-[90vh] shadow-2xl slide-up">
-                                <div className="p-5 md:p-6 border-b border-[#1f1f1f] flex justify-between items-center bg-[#050505] sticky top-0 z-20">
-                                    <div>
-                                        <h2 className="text-lg md:text-xl font-bold text-white">Book Appointment</h2>
-                                        <p className="text-xs md:text-sm text-brand-muted mt-1">Step {step} of 3</p>
-                                    </div>
-                                    <button onClick={() => setIsBooking(false)} className="text-brand-muted hover:text-white p-1">
-                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                                    </button>
-                                </div>
-
-                                <div className="p-5 md:p-8">
-                                    {/* STEP 1: OTP */}
-                                    {step === 1 && (
-                                        <form onSubmit={otpSent ? handleVerifyOTP : handleSendOTP} className="space-y-4 md:space-y-5 fade-in">
-                                            <div>
-                                                <label className="block text-xs md:text-sm font-medium text-brand-muted mb-2">Email Address</label>
-                                                <input type="email" required value={email} onChange={(e)=>setEmail(e.target.value)} disabled={otpSent} className="w-full bg-[#111] border border-[#222] rounded-xl p-3 md:p-4 text-sm md:text-base text-white focus:outline-none focus:border-brand-accent transition-colors" placeholder="Enter your email" />
-                                            </div>
-                                            {otpSent && (
-                                                <div className="fade-in">
-                                                    <label className="block text-xs md:text-sm font-medium text-brand-muted mb-2">6-Digit OTP</label>
-                                                    <input type="text" required maxLength="6" value={userOtp} onChange={(e)=>setUserOtp(e.target.value)} className="w-full bg-[#111] border border-[#222] rounded-xl p-3 md:p-4 text-lg md:text-xl text-white focus:outline-none focus:border-brand-accent transition-colors text-center tracking-widest" placeholder="••••••" />
-                                                </div>
-                                            )}
-                                            <button type="submit" className="w-full py-3 md:py-4 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition-colors text-sm md:text-base">
-                                                {otpSent ? "Verify & Continue" : "Send Verification Code"}
-                                            </button>
-                                        </form>
-                                    )}
-
-                                    {/* STEP 2: SCHEDULE */}
-                                    {step === 2 && (
-                                        <div className="space-y-4 md:space-y-5 fade-in">
-                                            <div>
-                                                <label className="block text-xs md:text-sm font-medium text-brand-muted mb-2">Select Date</label>
-                                                {/* MIN ATTRIBUTE ADDED HERE to prevent past dates */}
-                                                <input type="date" min={today} required value={date} onChange={(e)=>setDate(e.target.value)} className="w-full bg-[#111] border border-[#222] rounded-xl p-3 md:p-4 text-sm md:text-base text-white focus:outline-none focus:border-brand-accent transition-colors" />
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs md:text-sm font-medium text-brand-muted mb-2">Select Evening Time Slot</label>
-                                                <select required value={time} onChange={(e)=>setTime(e.target.value)} className="w-full bg-[#111] border border-[#222] rounded-xl p-3 md:p-4 text-sm md:text-base text-white focus:outline-none focus:border-brand-accent transition-colors">
-                                                    <option value="">Choose time slot...</option>
-                                                    <option value="08:00 PM">08:00 PM</option>
-                                                    <option value="09:00 PM">09:00 PM</option>
-                                                    <option value="10:00 PM">10:00 PM</option>
-                                                    <option value="11:00 PM">11:00 PM</option>
-                                                </select>
-                                                <p className="text-xs text-brand-accent mt-2 flex items-start gap-1">
-                                                    <span className="text-sm">⏳</span> 
-                                                    <span><strong>Note:</strong> Every consultation call lasts a maximum of 40 minutes.</span>
-                                                </p>
-                                            </div>
-                                            <div className="flex gap-3 md:gap-4 pt-2">
-                                                <button type="button" onClick={() => setStep(1)} className="w-1/3 py-3 md:py-4 bg-[#111] border border-[#222] text-white font-bold rounded-xl hover:bg-[#222] transition-colors text-sm md:text-base">Back</button>
-                                                <button type="button" onClick={() => { if(date && time) setStep(3); else alert('Please select both a date and a time slot.'); }} className="w-2/3 py-3 md:py-4 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition-colors text-sm md:text-base">Proceed to Pay</button>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* STEP 3: PAYMENT */}
-                                    {step === 3 && (
-                                        <form onSubmit={(e) => { e.preventDefault(); alert('Order Placed! Admin will review your payment.'); setIsBooking(false); setStep(1); }} className="space-y-4 md:space-y-5 fade-in">
-                                            
-                                            <div className="bg-[#111] p-3 md:p-4 rounded-xl border border-[#222] flex items-center justify-between">
-                                                <span className="text-xs md:text-sm text-brand-muted">Total Amount</span>
-                                                <span className="text-xl md:text-2xl font-bold text-brand-accent">₹499</span>
-                                            </div>
-
-                                            <div className="text-center py-2 md:py-4">
-                                                <div className="w-28 h-28 md:w-32 md:h-32 bg-white mx-auto rounded-xl flex items-center justify-center text-black font-bold mb-2 md:mb-3 border-4 border-brand-accent">
-                                                    QR CODE
-                                                </div>
-                                                <p className="text-xs md:text-sm font-bold text-brand-accent">UPI: astroveda@ybl</p>
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-xs md:text-sm font-medium text-brand-muted mb-2">WhatsApp / Contact Number</label>
-                                                <div className="flex">
-                                                    <span className="bg-[#111] border border-[#222] border-r-0 rounded-l-xl p-3 md:p-4 text-sm md:text-base text-brand-muted">+91</span>
-                                                    <input type="tel" pattern="[0-9]{10}" maxLength="10" required value={phone} onChange={(e)=>setPhone(e.target.value)} className="w-full bg-[#111] border border-[#222] rounded-r-xl p-3 md:p-4 text-sm md:text-base text-white focus:outline-none focus:border-brand-accent" placeholder="10-digit number" />
-                                                </div>
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-xs md:text-sm font-medium text-brand-muted mb-2">Transaction ID (TXID)</label>
-                                                <input type="text" required value={txid} onChange={(e)=>setTxid(e.target.value)} className="w-full bg-[#111] border border-[#222] rounded-xl p-3 md:p-4 text-sm md:text-base text-white focus:outline-none focus:border-brand-accent" placeholder="Enter Reference ID" />
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-xs md:text-sm font-medium text-brand-muted mb-2">Upload Screenshot</label>
-                                                <input type="file" accept="image/*" required className="w-full text-xs md:text-sm text-brand-muted file:mr-3 md:file:mr-4 file:py-2 md:file:py-3 file:px-3 md:file:px-4 file:rounded-xl file:border-0 file:text-xs md:file:text-sm file:font-bold file:bg-[#111] file:text-white hover:file:bg-[#222] file:cursor-pointer" />
-                                            </div>
-
-                                            <div className="flex gap-3 md:gap-4 pt-2">
-                                                <button type="button" onClick={() => setStep(2)} className="w-1/3 py-3 md:py-4 bg-[#111] border border-[#222] text-white font-bold rounded-xl hover:bg-[#222] transition-colors text-sm md:text-base">Back</button>
-                                                <button type="submit" className="w-2/3 py-3 md:py-4 bg-brand-accent text-black font-bold rounded-xl hover:bg-yellow-400 transition-colors text-sm md:text-base">Confirm Order</button>
-                                            </div>
-                                        </form>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                    {isBooking && renderBookingModal()}
                 </div>
             );
 
-            // --- ADMIN VIEWS ---
+            // Admin Panel
             const renderAdmin = () => {
                 if (!isAdminLoggedIn) {
                     return (
