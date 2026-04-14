@@ -9,7 +9,7 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     
     <script>
         tailwind.config = {
@@ -32,16 +32,10 @@
     <style>
         body { background-color: #000; color: #fff; font-family: 'Inter', sans-serif; overflow-x: hidden; }
         .glass { background: rgba(10, 10, 10, 0.7); backdrop-filter: blur(12px); border: 1px solid #1f1f1f; }
-        .animate-smooth { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
         @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
         .slide-up { animation: slideUp 0.6s ease-out forwards; }
-        
-        /* Disable styling for the date picker */
         input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
-        input:disabled { opacity: 0.5; cursor: not-allowed; border-color: #333 !important; }
-        
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+        .milestone-badge { background: rgba(250, 204, 21, 0.1); border: 1px solid rgba(250, 204, 21, 0.2); }
     </style>
 </head>
 <body>
@@ -57,13 +51,13 @@
             const [isBooking, setIsBooking] = useState(false);
             const [step, setStep] = useState(1);
             
-            // Core States
-            const [bookedDates, setBookedDates] = useState(['2026-04-14']); // Dates that are greyed out
+            // System States
+            const [bookedDates, setBookedDates] = useState(['2026-04-25']); 
             const [appointments, setAppointments] = useState([
-                { id: 'AV-1002', email: 'example@mail.com', phone: '9123456780', date: '2026-04-14', status: 'Approved', txid: 'TXN88271' }
+                { id: 'AV-7721', email: 'client@example.com', phone: '9898989898', date: '2026-04-25', status: 'Approved', txid: 'TXN12345' }
             ]);
 
-            // Booking States
+            // Booking Flow States
             const [email, setEmail] = useState('');
             const [phone, setPhone] = useState('');
             const [date, setDate] = useState('');
@@ -73,28 +67,14 @@
             const [userOtp, setUserOtp] = useState('');
             const [isSending, setIsSending] = useState(false);
 
-            // Admin Login States
+            // Admin States
             const [adminId, setAdminId] = useState('');
             const [adminPass, setAdminPass] = useState('');
             const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
 
             const today = new Date().toISOString().split('T')[0];
 
-            // --- ADMIN LOGIC ---
-            const handleApprove = (id, selectedDate) => {
-                setAppointments(appointments.map(app => app.id === id ? {...app, status: 'Approved'} : app));
-                // Add to greyed out list
-                if (!bookedDates.includes(selectedDate)) {
-                    setBookedDates([...bookedDates, selectedDate]);
-                }
-                alert(`Appointment for ${selectedDate} Approved. This date is now locked.`);
-            };
-
-            const handleReject = (id) => {
-                setAppointments(appointments.filter(app => app.id !== id));
-            };
-
-            // --- CLIENT LOGIC ---
+            // --- LOGIC ---
             const handleSendOTP = async (e) => {
                 e.preventDefault();
                 setIsSending(true);
@@ -105,109 +85,118 @@
                     setOtpSent(true);
                     setIsSending(false);
                 } catch (err) {
-                    alert("OTP Error.");
+                    alert("Verification error.");
                     setIsSending(false);
                 }
             };
 
             const finalizeBooking = () => {
-                const newApp = {
-                    id: 'AV-' + Math.floor(1000 + Math.random() * 9000),
-                    email, phone, date, status: 'Pending', txid
-                };
+                const newApp = { id: 'AV-' + Math.floor(1000+Math.random()*9000), email, phone, date, status: 'Pending', txid };
                 setAppointments([newApp, ...appointments]);
-                alert("Payment submitted! Once Admin approves, this date will be reserved for you.");
+                alert("Success! Admin will review your payment and contact you.");
                 setIsBooking(false);
                 setStep(1);
                 setEmail(''); setPhone(''); setTxid(''); setDate(''); setOtpSent(false);
             };
 
-            // Validation for Date Selection
-            const handleDateChange = (e) => {
-                const val = e.target.value;
-                if (bookedDates.includes(val)) {
-                    alert("This date is already booked by another client. Please choose another date.");
-                    setDate('');
-                } else {
-                    setDate(val);
-                }
+            const handleApprove = (id, selectedDate) => {
+                setAppointments(appointments.map(app => app.id === id ? {...app, status: 'Approved'} : app));
+                if (!bookedDates.includes(selectedDate)) setBookedDates([...bookedDates, selectedDate]);
             };
 
             const handleAdminLogin = (e) => {
                 e.preventDefault();
                 if (adminId === 'PRATHAM003' && adminPass === 'Pkjewellers155') setIsAdminLoggedIn(true);
-                else alert("Incorrect Credentials");
+                else alert("Invalid Credentials");
             };
 
-            // --- COMPONENTS ---
+            // --- UI COMPONENTS ---
+            const MilestoneSection = () => (
+                <div className="flex flex-wrap justify-center gap-4 mb-10 slide-up">
+                    <div className="milestone-badge px-4 py-2 rounded-full flex items-center gap-2">
+                        <span className="text-brand-accent font-bold">30+ Years</span>
+                        <span className="text-[10px] text-brand-muted uppercase tracking-tighter">Experience</span>
+                    </div>
+                    <div className="milestone-badge px-4 py-2 rounded-full flex items-center gap-2">
+                        <span className="text-brand-accent font-bold">5000+</span>
+                        <span className="text-[10px] text-brand-muted uppercase tracking-tighter">Thriving Lives</span>
+                    </div>
+                    <div className="milestone-badge px-4 py-2 rounded-full flex items-center gap-2">
+                        <span className="text-brand-accent font-bold">Unique Analysis</span>
+                        <span className="text-[10px] text-brand-muted uppercase tracking-tighter">Methods</span>
+                    </div>
+                </div>
+            );
+
             const Navbar = () => (
-                <nav className="flex justify-between items-center p-6 max-w-7xl mx-auto w-full sticky top-0 z-40 bg-black/50 backdrop-blur-md">
+                <nav className="flex justify-between items-center p-8 max-w-7xl mx-auto w-full">
                     <div className="flex items-center gap-2 cursor-pointer select-none" onDoubleClick={() => setView('admin')} onClick={() => setView('client')}>
-                        <div className="w-9 h-9 bg-brand-accent rounded-lg flex items-center justify-center text-black text-xl shadow-[0_0_15px_rgba(250,204,21,0.4)]">🪐</div>
-                        <span className="text-xl font-black tracking-tighter">ASTRO<span className="text-brand-muted">VEDA</span></span>
+                        <div className="w-10 h-10 bg-brand-accent rounded-lg flex items-center justify-center text-black text-2xl shadow-[0_0_20px_rgba(250,204,21,0.3)]">🪐</div>
+                        <span className="text-2xl font-black tracking-tighter">ASTRO<span className="text-brand-muted font-light">VEDA</span></span>
+                    </div>
+                    <div className="hidden md:flex gap-8 text-xs font-bold uppercase tracking-widest text-brand-muted">
+                        <a href="#reviews" className="hover:text-white transition-colors">Reviews</a>
+                        <a href="#" className="hover:text-white transition-colors">Support</a>
                     </div>
                 </nav>
             );
 
             const BookingModal = () => (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl">
-                    <div className="bg-brand-card border border-brand-border rounded-[2.5rem] w-full max-w-md overflow-hidden slide-up shadow-2xl">
+                    <div className="bg-brand-card border border-brand-border rounded-[2rem] w-full max-w-md overflow-hidden slide-up shadow-2xl">
                         <div className="p-6 border-b border-brand-border flex justify-between items-center bg-[#050505]">
-                            <div>
-                                <h2 className="text-lg font-bold">Booking Session</h2>
-                                <p className="text-[10px] text-brand-muted tracking-widest uppercase">Step {step} of 4</p>
-                            </div>
-                            <button onClick={() => setIsBooking(false)} className="w-8 h-8 rounded-full bg-brand-border flex items-center justify-center text-xs">✕</button>
+                            <h2 className="text-lg font-bold uppercase tracking-widest">Step {step} of 4</h2>
+                            <button onClick={() => setIsBooking(false)} className="text-brand-muted">✕</button>
                         </div>
 
                         <div className="p-8">
                             {step === 1 && (
                                 <form onSubmit={otpSent ? (e)=>{e.preventDefault(); if(userOtp===generatedOtp)setStep(2); else alert("Wrong OTP")} : handleSendOTP} className="space-y-4">
                                     <input type="email" required placeholder="Email Address" value={email} onChange={(e)=>setEmail(e.target.value)} className="w-full bg-black border border-brand-border p-4 rounded-2xl focus:border-brand-accent outline-none" disabled={otpSent}/>
-                                    {otpSent && <input type="text" maxLength="6" placeholder="OTP Code" value={userOtp} onChange={(e)=>setUserOtp(e.target.value)} className="w-full bg-black border border-brand-border p-4 rounded-2xl text-center text-xl tracking-[0.5em] font-bold text-brand-accent"/>}
-                                    <button className="w-full bg-white text-black font-black py-4 rounded-2xl transition-all hover:bg-brand-accent">
-                                        {isSending ? "Processing..." : (otpSent ? "Continue" : "Send Verification Code")}
+                                    {otpSent && <input type="text" maxLength="6" placeholder="Enter Code" value={userOtp} onChange={(e)=>setUserOtp(e.target.value)} className="w-full bg-black border border-brand-border p-4 rounded-2xl text-center text-xl tracking-[0.5em] font-bold text-brand-accent"/>}
+                                    <button className="w-full bg-white text-black font-black py-4 rounded-2xl hover:bg-brand-accent transition-all">
+                                        {isSending ? "Processing..." : (otpSent ? "Verify" : "Send Verification Code")}
                                     </button>
                                 </form>
                             )}
 
                             {step === 2 && (
-                                <div className="space-y-6">
-                                    <div className="p-4 bg-brand-accent/5 border border-brand-accent/20 rounded-2xl text-center">
-                                        <p className="text-[10px] text-brand-accent font-bold uppercase tracking-tighter">Fixed Session Time</p>
+                                <div className="space-y-6 text-center">
+                                    <div className="p-4 bg-brand-accent/5 border border-brand-accent/20 rounded-2xl">
+                                        <p className="text-[10px] text-brand-accent font-bold uppercase tracking-widest">Fixed Time Slot</p>
                                         <p className="text-3xl font-black">09:30 PM</p>
                                     </div>
-                                    <div className="space-y-2">
-                                        <label className="text-xs text-brand-muted px-2">Select Date (Greyed dates are booked)</label>
-                                        <input type="date" min={today} required value={date} onChange={handleDateChange} className="w-full bg-black border border-brand-border p-4 rounded-2xl outline-none"/>
-                                    </div>
-                                    <button onClick={()=>date ? setStep(3) : alert("Select a date")} className="w-full bg-white text-black font-black py-4 rounded-2xl">Confirm Schedule</button>
+                                    <input type="date" min={today} required value={date} onChange={(e)=> {
+                                        if(bookedDates.includes(e.target.value)) { alert("Fully Booked!"); setDate(''); } else setDate(e.target.value);
+                                    }} className="w-full bg-black border border-brand-border p-4 rounded-2xl outline-none"/>
+                                    <button onClick={()=>date ? setStep(3) : alert("Select Date")} className="w-full bg-white text-black font-black py-4 rounded-2xl">Next</button>
                                 </div>
                             )}
 
                             {step === 3 && (
                                 <div className="space-y-5 text-center">
                                     <div className="bg-black border border-brand-border p-5 rounded-2xl">
-                                        <p className="text-brand-muted text-xs uppercase mb-1">Fee: ₹2,000</p>
-                                        <p className="text-xs font-bold text-brand-accent">UPI: astroveda@ybl</p>
+                                        <p className="text-brand-muted text-xs uppercase mb-1">Final Amount</p>
+                                        <p className="text-4xl font-black text-brand-accent">₹1,999</p>
                                     </div>
-                                    <div className="w-36 h-36 bg-white mx-auto rounded-2xl flex items-center justify-center text-black text-[10px] font-bold">QR CODE</div>
-                                    <input type="text" placeholder="Transaction ID (TXID)" value={txid} onChange={(e)=>setTxid(e.target.value)} className="w-full bg-black border border-brand-border p-4 rounded-2xl outline-none text-sm"/>
-                                    <button onClick={()=>txid ? setStep(4) : alert("Enter TXID")} className="w-full bg-brand-accent text-black font-black py-4 rounded-2xl">Verify Payment</button>
+                                    <div className="w-36 h-36 bg-white mx-auto rounded-2xl flex items-center justify-center text-black text-[10px] font-bold uppercase tracking-tighter">UPI QR CODE</div>
+                                    <p className="text-[10px] text-brand-muted uppercase font-bold tracking-widest">UPI ID: astroveda@ybl</p>
+                                    <input type="text" placeholder="Transaction ID" value={txid} onChange={(e)=>setTxid(e.target.value)} className="w-full bg-black border border-brand-border p-4 rounded-2xl outline-none"/>
+                                    <button onClick={()=>txid ? setStep(4) : alert("Enter TXID")} className="w-full bg-brand-accent text-black font-black py-4 rounded-2xl">Confirm Payment</button>
                                 </div>
                             )}
 
                             {step === 4 && (
                                 <div className="space-y-5">
                                     <div className="text-center">
-                                        <h3 className="text-xl font-bold mb-2">Final Step!</h3>
-                                        <p className="text-xs text-brand-muted">Provide your number so we can call you at 9:30 PM on your selected date.</p>
+                                        <h3 className="text-xl font-bold mb-2 uppercase">Contact Info</h3>
+                                        <p className="text-xs text-brand-muted">Our expert will call you for the consultation.</p>
                                     </div>
                                     <div className="flex">
                                         <span className="bg-brand-border p-4 rounded-l-2xl text-brand-muted border border-r-0 border-brand-border">+91</span>
-                                        <input type="tel" maxLength="10" placeholder="Number" value={phone} onChange={(e)=>setPhone(e.target.value)} className="w-full bg-black border border-brand-border p-4 rounded-r-2xl outline-none font-bold"/>
+                                        <input type="tel" maxLength="10" placeholder="Mobile Number" value={phone} onChange={(e)=>setPhone(e.target.value)} className="w-full bg-black border border-brand-border p-4 rounded-r-2xl outline-none font-bold tracking-widest"/>
                                     </div>
-                                    <button onClick={() => phone.length === 10 ? finalizeBooking() : alert("Invalid number")} className="w-full bg-white text-black font-black py-4 rounded-2xl hover:bg-green-500">Book Session</button>
+                                    <button onClick={() => phone.length === 10 ? finalizeBooking() : alert("Invalid number")} className="w-full bg-white text-black font-black py-4 rounded-2xl hover:bg-green-500">Finish Booking</button>
                                 </div>
                             )}
                         </div>
@@ -219,52 +208,52 @@
                 return (
                     <div className="min-h-screen bg-[#050505] p-6 md:p-12">
                         {!isAdminLoggedIn ? (
-                            <div className="max-w-md mx-auto mt-20 p-10 bg-brand-card border border-brand-border rounded-[2.5rem] slide-up shadow-2xl">
-                                <h2 className="text-2xl font-black mb-6 text-center">Admin Login</h2>
+                            <div className="max-w-md mx-auto mt-20 p-10 bg-brand-card border border-brand-border rounded-[2.5rem] shadow-2xl">
+                                <h2 className="text-2xl font-black mb-6 text-center uppercase tracking-widest">Admin Panel</h2>
                                 <form onSubmit={handleAdminLogin} className="space-y-4">
-                                    <input type="text" placeholder="ID" value={adminId} onChange={(e)=>setAdminId(e.target.value)} className="w-full bg-black border border-brand-border p-4 rounded-2xl outline-none"/>
-                                    <input type="password" placeholder="Pass" value={adminPass} onChange={(e)=>setAdminPass(e.target.value)} className="w-full bg-black border border-brand-border p-4 rounded-2xl outline-none"/>
-                                    <button className="w-full bg-brand-accent text-black font-black py-4 rounded-2xl shadow-lg">Enter Dashboard</button>
-                                    <button type="button" onClick={()=>setView('client')} className="w-full text-brand-muted text-xs mt-4">Exit</button>
+                                    <input type="text" placeholder="ID" value={adminId} onChange={(e)=>setAdminId(e.target.value)} className="w-full bg-black border border-brand-border p-4 rounded-2xl outline-none focus:border-brand-accent"/>
+                                    <input type="password" placeholder="PASS" value={adminPass} onChange={(e)=>setAdminPass(e.target.value)} className="w-full bg-black border border-brand-border p-4 rounded-2xl outline-none focus:border-brand-accent"/>
+                                    <button className="w-full bg-brand-accent text-black font-black py-4 rounded-2xl shadow-lg">Login</button>
+                                    <button type="button" onClick={()=>setView('client')} className="w-full text-brand-muted text-xs font-bold mt-4 uppercase">Return to Site</button>
                                 </form>
                             </div>
                         ) : (
                             <div className="max-w-6xl mx-auto">
                                 <div className="flex justify-between items-center mb-10">
-                                    <h2 className="text-2xl font-black">ACTIVE REQUESTS</h2>
-                                    <button onClick={()=>setIsAdminLoggedIn(false)} className="px-6 py-2 bg-brand-border rounded-xl font-bold">Logout</button>
+                                    <h2 className="text-3xl font-black italic">CLIENT INTAKE</h2>
+                                    <button onClick={()=>setIsAdminLoggedIn(false)} className="px-6 py-2 bg-brand-border rounded-xl font-bold hover:bg-white hover:text-black transition-all">Logout</button>
                                 </div>
                                 <div className="overflow-x-auto rounded-[2rem] border border-brand-border shadow-2xl">
                                     <table className="w-full text-left bg-brand-card">
-                                        <thead className="bg-[#111] text-[10px] uppercase text-brand-muted tracking-widest">
+                                        <thead className="bg-[#111] text-[10px] uppercase text-brand-muted tracking-[0.2em]">
                                             <tr>
-                                                <th className="p-6">Client Details</th>
-                                                <th className="p-6">Selected Date</th>
-                                                <th className="p-6">Mobile Number</th>
-                                                <th className="p-6">Status</th>
-                                                <th className="p-6">Actions</th>
+                                                <th className="p-6">Client Info</th>
+                                                <th className="p-6">Booked Date</th>
+                                                <th className="p-6">Number</th>
+                                                <th className="p-6">Payment TXID</th>
+                                                <th className="p-6">Action</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-brand-border">
                                             {appointments.map(app => (
-                                                <tr key={app.id}>
+                                                <tr key={app.id} className="hover:bg-white/5 transition-colors">
                                                     <td className="p-6">
                                                         <p className="text-sm font-bold">{app.email}</p>
-                                                        <p className="text-[10px] text-brand-muted">ID: {app.id} | TXID: {app.txid}</p>
+                                                        <p className="text-[10px] text-brand-muted uppercase font-bold tracking-widest">{app.id}</p>
                                                     </td>
-                                                    <td className="p-6 text-sm font-medium">{app.date} (09:30 PM)</td>
-                                                    <td className="p-6"><span className="text-brand-accent font-black">+91 {app.phone}</span></td>
+                                                    <td className="p-6 text-sm font-medium">{app.date}</td>
                                                     <td className="p-6">
-                                                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${app.status === 'Approved' ? 'bg-green-500/10 text-green-500' : 'bg-yellow-500/10 text-brand-accent'}`}>
-                                                            {app.status}
-                                                        </span>
+                                                        <span className="bg-brand-accent/10 text-brand-accent px-4 py-2 rounded-lg font-black text-sm">+91 {app.phone}</span>
                                                     </td>
+                                                    <td className="p-6 text-xs text-brand-muted font-mono">{app.txid}</td>
                                                     <td className="p-6">
                                                         <div className="flex gap-2">
-                                                            {app.status !== 'Approved' && (
-                                                                <button onClick={()=>handleApprove(app.id, app.date)} className="bg-green-600 px-3 py-1 rounded text-[10px] font-bold hover:bg-green-500 transition-colors">APPROVE</button>
+                                                            {app.status !== 'Approved' ? (
+                                                                <button onClick={()=>handleApprove(app.id, app.date)} className="bg-green-600 px-4 py-2 rounded text-[10px] font-bold shadow-lg shadow-green-900/20">APPROVE</button>
+                                                            ) : (
+                                                                <span className="text-green-500 font-bold text-xs uppercase">✓ Done</span>
                                                             )}
-                                                            <button onClick={()=>handleReject(app.id)} className="bg-white/10 px-3 py-1 rounded text-[10px] font-bold hover:bg-red-600 transition-colors">REJECT</button>
+                                                            <button onClick={()=>handleReject(app.id)} className="bg-white/10 px-4 py-2 rounded text-[10px] font-bold">REMOVE</button>
                                                         </div>
                                                     </td>
                                                 </tr>
@@ -281,53 +270,60 @@
             return (
                 <div className="min-h-screen flex flex-col selection:bg-brand-accent selection:text-black">
                     <Navbar />
-                    <main className="flex-grow flex flex-col items-center justify-center px-6 py-16 text-center">
+                    <main className="flex-grow flex flex-col items-center justify-center px-6 py-20 text-center">
                         <div className="slide-up">
-                            <h1 className="text-6xl md:text-[8rem] font-black tracking-tighter mb-4 leading-none uppercase">
-                                ASTRO<br/><span className="text-brand-accent italic">VEDA</span>
+                            
+                            <MilestoneSection />
+
+                            <h1 className="text-5xl md:text-[8rem] font-black tracking-tighter mb-4 leading-none uppercase">
+                                PRECISION<br/><span className="text-brand-accent italic">ASTROLOGY</span>
                             </h1>
-                            <p className="text-brand-muted text-lg max-w-xl mx-auto mb-12 font-light leading-relaxed">
-                                High-end astrological readings. One exclusive session per day. 
-                                <span className="block text-white font-bold mt-2 tracking-widest uppercase">Fixed at 09:30 PM.</span>
+                            <p className="text-brand-muted text-lg max-w-2xl mx-auto mb-16 font-light leading-relaxed">
+                                Get instant clarity with our unique analysis methods that differ from traditional approaches. We provide logical answers to your life's most complex questions.
                             </p>
                             
-                            <div className="max-w-sm mx-auto bg-brand-card p-12 rounded-[3rem] border border-brand-border shadow-2xl relative">
-                                <p className="text-brand-muted line-through font-bold text-sm mb-1">₹4,000</p>
-                                <h2 className="text-6xl font-black text-white mb-8 tracking-tighter">₹2,000</h2>
-                                <button onClick={() => setIsBooking(true)} className="w-full bg-brand-accent text-black font-black py-5 rounded-[1.5rem] hover:scale-105 active:scale-95 transition-all">
-                                    Book 9:30 PM Slot
-                                </button>
-                                <p className="text-[10px] text-brand-muted mt-6 uppercase font-bold tracking-widest">Slots Fill Fast</p>
+                            <div className="max-w-sm mx-auto">
+                                <div className="bg-brand-card p-12 rounded-[3.5rem] border border-brand-border shadow-[0_0_80px_rgba(250,204,21,0.15)] relative overflow-hidden group hover:border-brand-accent transition-all duration-700">
+                                    <div className="absolute top-0 right-10 bg-brand-accent text-black text-[10px] font-black px-4 py-1.5 rounded-b-xl uppercase tracking-widest">Exclusive Deal</div>
+                                    <p className="text-brand-muted line-through font-bold text-sm mb-1 opacity-60">₹3,500</p>
+                                    <h2 className="text-7xl font-black text-white mb-8 tracking-tighter">₹1,999</h2>
+                                    <button onClick={() => setIsBooking(true)} className="w-full bg-brand-accent text-black font-black py-5 rounded-[2rem] hover:scale-105 active:scale-95 transition-all shadow-xl uppercase tracking-widest text-xs">
+                                        Book Your Slot
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </main>
 
                     {/* Review Section */}
-                    <section id="reviews" className="bg-brand-card border-t border-brand-border py-24 px-6">
+                    <section id="reviews" className="bg-brand-card border-t border-brand-border py-28 px-6">
                         <div className="max-w-5xl mx-auto">
-                            <h3 className="text-2xl font-black mb-12 text-center uppercase tracking-widest">Client Reviews</h3>
-                            <div className="grid md:grid-cols-3 gap-8 mb-20">
+                            <h3 className="text-3xl font-black mb-16 text-center uppercase tracking-[0.2em] text-white">Trust from the community</h3>
+                            
+                            <div className="grid md:grid-cols-3 gap-8 mb-24">
                                 {[
-                                    {name: "Aman V.", text: "The accuracy is unmatched. Worth every rupee."},
-                                    {name: "Sneha R.", text: "Logical explanations and practical remedies. Excellent."},
-                                    {name: "Vikram", text: "The 9:30 PM timing works perfectly for professional schedules."}
+                                    {name: "Karan Johar", text: "The methods used are incredibly unique. I've never seen such accurate analysis before."},
+                                    {name: "Simran W.", text: "30 years of experience really shows in how they handle delicate questions. Highly recommend."},
+                                    {name: "Amit Patel", text: "Finally an astrological service that isn't just generic predictions. Real guidance."}
                                 ].map((rev, i) => (
-                                    <div key={i} className="p-8 bg-black rounded-[2.5rem] border border-brand-border">
-                                        <p className="text-brand-muted text-sm italic mb-6">"{rev.text}"</p>
-                                        <p className="text-brand-accent font-black text-[10px] uppercase tracking-widest">— {rev.name}</p>
+                                    <div key={i} className="p-10 bg-black rounded-[3rem] border border-brand-border hover:border-brand-accent transition-all">
+                                        <p className="text-brand-muted text-sm leading-relaxed mb-8 italic">"{rev.text}"</p>
+                                        <p className="text-brand-accent font-black text-[10px] uppercase tracking-[0.2em]">Seeker: {rev.name}</p>
                                     </div>
                                 ))}
                             </div>
-                            <div className="max-w-xl mx-auto bg-[#050505] p-10 rounded-[3rem] border border-brand-border text-center shadow-inner">
-                                <p className="text-xs font-bold mb-6 text-brand-muted uppercase tracking-widest">Help us improve</p>
-                                <textarea placeholder="Share your experience..." className="w-full bg-black border border-brand-border p-5 rounded-2xl outline-none mb-4 h-32 text-sm focus:border-brand-accent transition-colors"></textarea>
-                                <button onClick={() => alert("Review submitted for moderation.")} className="bg-white text-black px-10 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-brand-accent transition-colors">Submit Review</button>
+
+                            <div className="max-w-2xl mx-auto bg-[#050505] p-12 rounded-[3.5rem] border border-brand-border text-center shadow-inner">
+                                <h4 className="font-bold mb-2 uppercase tracking-widest">Share Your Experience</h4>
+                                <p className="text-xs text-brand-muted mb-8 italic">Help us improve Astro Veda and serve you better.</p>
+                                <textarea placeholder="Write your review here..." className="w-full bg-black border border-brand-border p-6 rounded-3xl outline-none mb-6 h-36 text-sm focus:border-brand-accent transition-colors"></textarea>
+                                <button onClick={() => alert("Thank you for your feedback!")} className="bg-white text-black px-12 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-brand-accent transition-colors">Submit Review</button>
                             </div>
                         </div>
                     </section>
 
-                    <footer className="p-12 text-center border-t border-brand-border text-brand-muted text-[10px] font-bold uppercase tracking-[0.2em]">
-                        © 2026 ASTRO VEDA PREMIUM. ALL RIGHTS RESERVED.
+                    <footer className="p-12 text-center border-t border-brand-border text-brand-muted text-[10px] font-bold uppercase tracking-[0.3em]">
+                        © 2026 ASTRO VEDA PREMIUM. ESTABLISHED 1996.
                     </footer>
 
                     {isBooking && <BookingModal />}
