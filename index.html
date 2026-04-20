@@ -60,24 +60,6 @@ text-shadow: 0 0 10px rgba(255, 255, 255, 0.7), 0 0 20px rgba(255, 255, 255, 0.5
 ::-webkit-scrollbar-track { background: #000; }
 ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: #444; }
-
-.standout-price {
-    color: #fff;
-    font-weight: 900;
-    text-shadow: 
-        0px 1px 0px #ccc,
-        0px 2px 0px #b3b3b3,
-        0px 3px 0px #999,
-        0px 4px 0px #808080,
-        0px 5px 0px #666,
-        0px 6px 1px rgba(0,0,0,.1),
-        0px 0px 5px rgba(0,0,0,.1),
-        0px 1px 3px rgba(0,0,0,.3),
-        0px 3px 5px rgba(0,0,0,.2),
-        0px 5px 10px rgba(0,0,0,.25),
-        0px 10px 10px rgba(0,0,0,.2),
-        0px 20px 20px rgba(0,0,0,.15);
-}
 </style>
 </head>
 <body>
@@ -164,7 +146,7 @@ const finalizeBooking = () => {
 if (!phone || phone.length !== 10) { alert("Invalid number."); return; }
 const newApp = { id: 'AV-' + Math.floor(1000+Math.random()*9000), email, phone, date, status: 'Pending', txid };
 setAppointments([newApp, ...appointments]);
-alert("Booking submitted! Expect a call at 9:30 PM on your date.");
+alert("Wait for the approval from the Astro Veda");
 setIsBooking(false);
 setStep(1);
 setEmail(''); setPhone(''); setTxid(''); setDate(''); setOtpSent(false);
@@ -249,7 +231,7 @@ const BookingModal = () => (
 <div className="space-y-5 text-center">
 <div className="bg-black border border-brand-border p-5 rounded-2xl">
 <p className="text-brand-muted text-[10px] uppercase mb-1 tracking-widest">Amount to Pay</p>
-<p className="text-4xl standout-price">₹1,999</p>
+<p className="text-4xl font-black text-white">₹1,999</p>
 </div>
 <img src="qr-code.jpg" alt="Astro Veda UPI QR" className="w-48 h-48 mx-auto rounded-xl border border-brand-border shadow-xl"/>
 <p className="text-[10px] text-brand-muted font-bold tracking-widest uppercase">UPI ID: bafna4955@okaxis</p>
@@ -363,7 +345,7 @@ Get instant clarity with our unique analysis methods. We provide logical answers
 <div className="bg-brand-card p-12 rounded-[3.5rem] border border-brand-border shadow-2xl relative overflow-hidden group hover:border-brand-accent transition-all duration-700">
 <div className="absolute top-0 right-10 bg-brand-accent text-black text-[10px] font-black px-4 py-1.5 rounded-b-xl uppercase tracking-widest">Exclusive Deal</div>
 <p className="text-brand-muted line-through font-bold text-sm mb-1 opacity-60">₹3,500</p>
-<h2 className="text-7xl mb-8 tracking-tighter standout-price">₹1,999</h2>
+<h2 className="text-7xl font-bold text-white mb-8 tracking-tighter">₹1,999</h2>
 <button onClick={() => setIsBooking(true)} className="w-full bg-brand-accent text-black font-black py-5 rounded-[2rem] hover:scale-105 active:scale-95 transition-all shadow-xl uppercase tracking-widest text-xs">
 Book Your Slot
 </button>
