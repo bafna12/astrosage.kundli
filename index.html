@@ -1,303 +1,416 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Astro Veda - Premium Astrology</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
-    
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            bg: '#000000',
-                            card: '#0a0a0a',
-                            border: '#1f1f1f',
-                            accent: '#facc15',
-                            muted: '#a1a1aa'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        body { background-color: #000; color: #fff; font-family: 'Inter', sans-serif; }
-        .glass { background: rgba(10, 10, 10, 0.7); backdrop-filter: blur(10px); border: 1px solid #1f1f1f; }
-        .animate-smooth { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .slide-up { animation: slideUp 0.5s ease-out forwards; }
-        input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Astro Veda - Premium Astrology</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+<script>
+tailwind.config = {
+darkMode: 'class',
+theme: {
+extend: {
+colors: {
+brand: {
+bg: '#000000',
+card: '#0a0a0a',
+border: '#1f1f1f',
+accent: '#facc15',
+muted: '#a1a1aa'
+}
+}
+}
+}
+}
+</script>
+<style>
+body { background-color: #000; color: #fff; font-family: 'Inter', sans-serif; overflow-x: hidden; margin: 0; }
+.glass { background: rgba(10, 10, 10, 0.8); backdrop-filter: blur(12px); border: 1px solid #1f1f1f; }
+@keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+.slide-up { animation: slideUp 0.6s ease-out forwards; }
+
+/* Animated Background Elements */
+.stars-container { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+.star { position: absolute; background: white; border-radius: 50%; opacity: 0.5; animation: twinkle var(--d) infinite ease-in-out; }
+.planet { position: absolute; border-radius: 50%; opacity: 0.3; filter: blur(1px); }
+
+@keyframes twinkle { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+@keyframes float { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-20px) rotate(10deg); } }
+
+input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
+.milestone-badge { background: rgba(250, 204, 21, 0.1); border: 1px solid rgba(250, 204, 21, 0.2); }
+
+/* GLOWING TEXT EFFECTS */
+.glow-accent {
+color: #facc15;
+text-shadow: 0 0 10px rgba(250, 204, 21, 0.7), 0 0 20px rgba(250, 204, 21, 0.5);
+}
+.glow-white {
+color: #fff;
+text-shadow: 0 0 10px rgba(255, 255, 255, 0.7), 0 0 20px rgba(255, 255, 255, 0.5);
+}
+
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #000; }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #444; }
+
+.standout-price {
+    color: #fff;
+    font-weight: 900;
+    text-shadow: 
+        0px 1px 0px #ccc,
+        0px 2px 0px #b3b3b3,
+        0px 3px 0px #999,
+        0px 4px 0px #808080,
+        0px 5px 0px #666,
+        0px 6px 1px rgba(0,0,0,.1),
+        0px 0px 5px rgba(0,0,0,.1),
+        0px 1px 3px rgba(0,0,0,.3),
+        0px 3px 5px rgba(0,0,0,.2),
+        0px 5px 10px rgba(0,0,0,.25),
+        0px 10px 10px rgba(0,0,0,.2),
+        0px 20px 20px rgba(0,0,0,.15);
+}
+</style>
 </head>
 <body>
-    <div id="root"></div>
+<div id="root"></div>
 
-    <script type="text/babel">
-        const { useState, useEffect } = React;
+<script type="text/babel">
+const { useState, useEffect, useMemo, useRef } = React;
 
-        // Initialize EmailJS
-        emailjs.init("8r2tapCdRmVdIbFQb"); 
+emailjs.init("8r2tapCdRmVdIbFQb"); 
 
-        function App() {
-            const [view, setView] = useState('client');
-            const [isBooking, setIsBooking] = useState(false);
-            const [step, setStep] = useState(1);
-            
-            // Booking States
-            const [email, setEmail] = useState('');
-            const [phone, setPhone] = useState('');
-            const [date, setDate] = useState('');
-            const [txid, setTxid] = useState('');
-            const [otpSent, setOtpSent] = useState(false);
-            const [generatedOtp, setGeneratedOtp] = useState('');
-            const [userOtp, setUserOtp] = useState('');
-            const [isSending, setIsSending] = useState(false);
+function App() {
+const [view, setView] = useState('client');
+const [isBooking, setIsBooking] = useState(false);
+const [step, setStep] = useState(1);
 
-            // Admin States
-            const [adminId, setAdminId] = useState('');
-            const [adminPass, setAdminPass] = useState('');
-            const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
-            const [appointments, setAppointments] = useState([
-                { id: 'AV-9921', email: 'client@example.com', phone: '9988776655', date: '2026-04-20', time: '09:30 PM', status: 'Pending', txid: 'UPI987654' }
-            ]);
+const [bookedDates, setBookedDates] = useState(['2026-04-25']); 
+const [appointments, setAppointments] = useState([
+{ id: 'AV-7721', email: 'client@example.com', phone: '9898989898', date: '2026-04-25', status: 'Approved', txid: 'TXN12345' }
+]);
 
-            const today = new Date().toISOString().split('T')[0];
+const [email, setEmail] = useState('');
+const [phone, setPhone] = useState('');
+const [date, setDate] = useState('');
+const [txid, setTxid] = useState('');
+const [otpSent, setOtpSent] = useState(false);
+const [generatedOtp, setGeneratedOtp] = useState('');
+const [userOtp, setUserOtp] = useState('');
+const [isSending, setIsSending] = useState(false);
 
-            // --- LOGIC ---
-            const handleSendOTP = async (e) => {
-                e.preventDefault();
-                setIsSending(true);
-                const code = Math.floor(100000 + Math.random() * 900000).toString();
-                setGeneratedOtp(code);
-                try {
-                    await emailjs.send("service_z2jyz5c", "template_hod7wir", { to_email: email, otp_code: code });
-                    setOtpSent(true);
-                    setIsSending(false);
-                } catch (err) {
-                    alert("Error sending code. Please check email address.");
-                    setIsSending(false);
-                }
-            };
+const [adminId, setAdminId] = useState('');
+const [adminPass, setAdminPass] = useState('');
+const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
 
-            const handleVerifyOTP = (e) => {
-                e.preventDefault();
-                if (userOtp === generatedOtp) setStep(2);
-                else alert("Invalid Code");
-            };
+const today = new Date().toISOString().split('T')[0];
 
-            const handleAdminLogin = (e) => {
-                e.preventDefault();
-                if (adminId === 'PRATHAM003' && adminPass === 'Pkjewellers155') setIsAdminLoggedIn(true);
-                else alert("Access Denied");
-            };
+const stars = useMemo(() => {
+return [...Array(80)].map((_, i) => ({
+id: i,
+top: Math.random() * 100 + '%',
+left: Math.random() * 100 + '%',
+size: Math.random() * 2 + 1 + 'px',
+duration: Math.random() * 3 + 2 + 's'
+}));
+}, []);
 
-            // --- COMPONENTS ---
-            const Navbar = () => (
-                <nav className="flex justify-between items-center p-6 max-w-7xl mx-auto w-full">
-                    <div className="flex items-center gap-2 cursor-pointer" onDoubleClick={() => setView('admin')} onClick={() => setView('client')}>
-                        <div className="w-8 h-8 bg-brand-accent rounded flex items-center justify-center text-black text-xl">🪐</div>
-                        <span className="text-xl font-extrabold tracking-tighter">ASTRO<span className="text-brand-muted">VEDA</span></span>
-                    </div>
-                    <div className="flex gap-6 text-sm font-medium text-brand-muted">
-                        <a href="#" className="hover:text-brand-accent animate-smooth">Consultation</a>
-                        <a href="#" className="hover:text-brand-accent animate-smooth">Reviews</a>
-                    </div>
-                </nav>
-            );
+const emailInputRef = useRef(null);
 
-            const BookingModal = () => (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
-                    <div className="bg-brand-card border border-brand-border rounded-3xl w-full max-w-md overflow-hidden slide-up shadow-2xl">
-                        <div className="p-6 border-b border-brand-border flex justify-between items-center">
-                            <h2 className="text-xl font-bold">Secure Booking</h2>
-                            <button onClick={() => setIsBooking(false)} className="text-brand-muted">✕</button>
-                        </div>
+const handleApprove = (id, selectedDate) => {
+    setAppointments(appointments.map(app => app.id === id ? {...app, status: 'Approved'} : app));
+    if (!bookedDates.includes(selectedDate)) {
+        setBookedDates([...bookedDates, selectedDate]);
+    }
+    alert(`Appointment approved. Date ${selectedDate} is now locked.`);
+};
 
-                        <div className="p-8">
-                            {step === 1 && (
-                                <form onSubmit={otpSent ? handleVerifyOTP : handleSendOTP} className="space-y-4">
-                                    <label className="text-xs text-brand-muted uppercase font-bold tracking-widest">Step 1: Verification</label>
-                                    <input type="email" required placeholder="Your Email Address" value={email} onChange={(e)=>setEmail(e.target.value)} className="w-full bg-black border border-brand-border p-4 rounded-xl focus:border-brand-accent outline-none animate-smooth" disabled={otpSent}/>
-                                    {otpSent && <input type="text" required placeholder="Enter 6-Digit Code" value={userOtp} onChange={(e)=>setUserOtp(e.target.value)} className="w-full bg-black border border-brand-border p-4 rounded-xl text-center text-2xl tracking-[1rem] font-bold text-brand-accent"/>}
-                                    <button className="w-full bg-white text-black font-black py-4 rounded-xl hover:scale-[1.02] transition-transform">
-                                        {isSending ? "Processing..." : (otpSent ? "Continue" : "Get Code")}
-                                    </button>
-                                </form>
-                            )}
+const handleReject = (id) => {
+    setAppointments(appointments.filter(app => app.id !== id));
+};
 
-                            {step === 2 && (
-                                <div className="space-y-6">
-                                    <label className="text-xs text-brand-muted uppercase font-bold tracking-widest">Step 2: Schedule</label>
-                                    <div>
-                                        <p className="text-sm text-brand-muted mb-2">Available Date:</p>
-                                        <input type="date" min={today} required value={date} onChange={(e)=>setDate(e.target.value)} className="w-full bg-black border border-brand-border p-4 rounded-xl text-white outline-none"/>
-                                    </div>
-                                    <div className="p-4 bg-brand-accent/10 border border-brand-accent/20 rounded-xl">
-                                        <p className="text-xs text-brand-accent font-bold mb-1">FIXED TIME SLOT</p>
-                                        <p className="text-xl font-black text-white">09:30 PM</p>
-                                        <p className="text-[10px] text-brand-muted mt-1">40 Minutes Premium Consultation</p>
-                                    </div>
-                                    <button onClick={()=>setStep(3)} className="w-full bg-white text-black font-black py-4 rounded-xl">Proceed to Payment</button>
-                                </div>
-                            )}
+const handleAdminLogin = (e) => {
+    e.preventDefault();
+    if (adminId === 'PRATHAM003' && adminPass === 'Pkjewellers155') setIsAdminLoggedIn(true);
+    else alert("Invalid Credentials");
+};
 
-                            {step === 3 && (
-                                <div className="space-y-4 text-center">
-                                    <label className="text-xs text-brand-muted uppercase font-bold tracking-widest">Step 3: Payment</label>
-                                    <div className="bg-black border border-brand-border p-6 rounded-2xl">
-                                        <p className="text-brand-muted text-sm">Amount to Pay</p>
-                                        <p className="text-4xl font-black text-brand-accent">₹2,000</p>
-                                    </div>
-                                    <div className="w-40 h-40 bg-white mx-auto rounded-2xl flex items-center justify-center text-black font-bold">QR CODE</div>
-                                    <p className="text-xs font-bold text-brand-muted">UPI ID: astroveda@ybl</p>
-                                    <input type="text" placeholder="Enter Transaction ID (TXID)" value={txid} onChange={(e)=>setTxid(e.target.value)} className="w-full bg-black border border-brand-border p-4 rounded-xl outline-none text-sm"/>
-                                    <button onClick={()=>setStep(4)} className="w-full bg-brand-accent text-black font-black py-4 rounded-xl">Confirm Payment</button>
-                                </div>
-                            )}
+const handleSendOTP = async (e) => {
+e.preventDefault();
+if (!email) { alert("Please enter email."); return; }
+setIsSending(true);
+const code = Math.floor(100000 + Math.random() * 900000).toString();
+setGeneratedOtp(code);
+try {
+await emailjs.send("service_z2jyz5c", "template_hod7wir", { to_email: email, otp_code: code });
+setOtpSent(true);
+setIsSending(false);
+setTimeout(() => emailInputRef.current?.focus(), 100);
+} catch (err) {
+alert("Email service error.");
+setIsSending(false);
+}
+};
 
-                            {step === 4 && (
-                                <div className="space-y-4">
-                                    <div className="text-center mb-6">
-                                        <div className="w-16 h-16 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mx-auto text-2xl mb-4">✓</div>
-                                        <h3 className="text-xl font-bold">Payment Recorded!</h3>
-                                        <p className="text-sm text-brand-muted">Please provide your mobile number so our astrologer can contact you for the 9:30 PM session.</p>
-                                    </div>
-                                    <div className="flex">
-                                        <span className="bg-brand-border p-4 rounded-l-xl text-brand-muted border border-r-0 border-brand-border">+91</span>
-                                        <input type="tel" maxLength="10" placeholder="Mobile Number" value={phone} onChange={(e)=>setPhone(e.target.value)} className="w-full bg-black border border-brand-border p-4 rounded-r-xl outline-none"/>
-                                    </div>
-                                    <button onClick={() => { alert("Booking Successful! Admin will approve shortly."); setIsBooking(false); setStep(1); }} className="w-full bg-white text-black font-black py-4 rounded-xl hover:bg-brand-accent transition-colors">Complete Booking</button>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            );
+const finalizeBooking = () => {
+if (!phone || phone.length !== 10) { alert("Invalid number."); return; }
+const newApp = { id: 'AV-' + Math.floor(1000+Math.random()*9000), email, phone, date, status: 'Pending', txid };
+setAppointments([newApp, ...appointments]);
+alert("Booking submitted! Expect a call at 9:30 PM on your date.");
+setIsBooking(false);
+setStep(1);
+setEmail(''); setPhone(''); setTxid(''); setDate(''); setOtpSent(false);
+};
 
-            if (view === 'admin') {
-                return (
-                    <div className="min-h-screen bg-black p-4 md:p-10">
-                        {!isAdminLoggedIn ? (
-                            <div className="max-w-md mx-auto mt-20 p-10 bg-brand-card border border-brand-border rounded-3xl slide-up">
-                                <h2 className="text-2xl font-black mb-6 text-center">Admin Access</h2>
-                                <form onSubmit={handleAdminLogin} className="space-y-4">
-                                    <input type="text" placeholder="Admin ID" value={adminId} onChange={(e)=>setAdminId(e.target.value)} className="w-full bg-black border border-brand-border p-4 rounded-xl outline-none"/>
-                                    <input type="password" placeholder="Password" value={adminPass} onChange={(e)=>setAdminPass(e.target.value)} className="w-full bg-black border border-brand-border p-4 rounded-xl outline-none"/>
-                                    <button className="w-full bg-brand-accent text-black font-black py-4 rounded-xl">Login</button>
-                                    <button type="button" onClick={()=>setView('client')} className="w-full text-brand-muted text-sm">Exit</button>
-                                </form>
-                            </div>
-                        ) : (
-                            <div className="max-w-6xl mx-auto">
-                                <div className="flex justify-between items-center mb-10">
-                                    <h2 className="text-3xl font-black">Booking Dashboard</h2>
-                                    <button onClick={()=>setIsAdminLoggedIn(false)} className="px-6 py-2 bg-brand-border rounded-lg">Logout</button>
-                                </div>
-                                <div className="overflow-x-auto rounded-2xl border border-brand-border">
-                                    <table className="w-full text-left bg-brand-card">
-                                        <thead className="bg-brand-border text-xs uppercase text-brand-muted">
-                                            <tr>
-                                                <th className="p-5">Client</th>
-                                                <th className="p-5">Schedule</th>
-                                                <th className="p-5">TXID</th>
-                                                <th className="p-5">Status</th>
-                                                <th className="p-5">Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {appointments.map(app => (
-                                                <tr key={app.id} className="border-t border-brand-border">
-                                                    <td className="p-5 text-sm font-bold">{app.email}<br/><span className="text-brand-accent text-xs">+91 {app.phone}</span></td>
-                                                    <td className="p-5 text-sm">{app.date}<br/><span className="text-brand-muted">09:30 PM</span></td>
-                                                    <td className="p-5 text-xs text-brand-muted">{app.txid}</td>
-                                                    <td className="p-5"><span className="px-3 py-1 bg-yellow-500/10 text-brand-accent rounded-full text-[10px] font-bold uppercase">{app.status}</span></td>
-                                                    <td className="p-5 flex gap-2">
-                                                        <button className="px-4 py-2 bg-green-600 text-white rounded-md text-xs font-bold">Approve</button>
-                                                        <button className="px-4 py-2 bg-red-600/20 text-red-500 rounded-md text-xs font-bold">Reject</button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                );
-            }
+const MilestoneSection = () => (
+    <div className="flex flex-wrap justify-center gap-4 mb-10 slide-up">
+        <div className="milestone-badge px-6 py-2.5 rounded-full flex items-center gap-2">
+            <span className="text-brand-accent font-black">30+ Years</span>
+            <span className="text-[10px] text-brand-muted uppercase tracking-widest font-bold">Experience</span>
+        </div>
+        <div className="milestone-badge px-6 py-2.5 rounded-full flex items-center gap-2">
+            <span className="text-brand-accent font-black">5000+</span>
+            <span className="text-[10px] text-brand-muted uppercase tracking-widest font-bold">Thriving Lives</span>
+        </div>
+        <div className="milestone-badge px-6 py-2.5 rounded-full flex items-center gap-2">
+            <span className="text-brand-accent font-black">Unique Analysis</span>
+            <span className="text-[10px] text-brand-muted uppercase tracking-widest font-bold">Methods</span>
+        </div>
+    </div>
+);
 
-            return (
-                <div className="min-h-screen flex flex-col">
-                    <Navbar />
-                    <main className="flex-grow flex flex-col items-center justify-center px-6 py-20 text-center">
-                        <div className="slide-up">
-                            <h1 className="text-5xl md:text-8xl font-black tracking-tighter mb-6">
-                                DIVINE <span className="text-brand-accent">GUIDANCE</span>
-                            </h1>
-                            <p className="text-brand-muted text-lg md:text-xl max-w-2xl mx-auto mb-10 font-light">
-                                Unlock your future with a premium 40-minute consultation. 
-                                <span className="block text-brand-accent font-bold mt-2">Daily Session at 09:30 PM Sharp.</span>
-                            </p>
-                            
-                            <div className="max-w-sm mx-auto p-1 bg-gradient-to-b from-brand-accent to-yellow-700 rounded-[2rem] shadow-[0_0_50px_rgba(250,204,21,0.2)]">
-                                <div className="bg-brand-card p-10 rounded-[1.9rem]">
-                                    <p className="text-brand-muted line-through font-bold">₹4,000</p>
-                                    <h2 className="text-6xl font-black text-white mb-6">₹2,000</h2>
-                                    <ul className="text-left text-sm space-y-3 mb-8 text-brand-muted">
-                                        <li className="flex items-center gap-2">✨ Detailed Birth Chart</li>
-                                        <li className="flex items-center gap-2">✨ Career & Wealth Growth</li>
-                                        <li className="flex items-center gap-2">✨ Love & Relationship Clarity</li>
-                                    </ul>
-                                    <button onClick={() => setIsBooking(true)} className="w-full bg-brand-accent text-black font-black py-4 rounded-2xl hover:scale-105 transition-transform shadow-lg">
-                                        Book 9:30 PM Slot
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </main>
+const Navbar = () => (
+<nav className="flex justify-between items-center p-8 max-w-7xl mx-auto w-full z-20 relative">
+<div className="flex items-center gap-4 cursor-pointer select-none" onDoubleClick={() => setView('admin')} onClick={() => setView('client')}>
+<span className="text-4xl font-black tracking-tighter glow-white">ASTRO<span className="text-brand-muted font-light">VEDA</span></span>
+</div>
+<div className="hidden md:flex gap-8 text-xs font-bold uppercase tracking-widest text-brand-muted">
+<a href="#reviews" className="hover:text-white transition-colors">Client Feedback</a>
+</div>
+</nav>
+);
 
-                    {/* Review Section */}
-                    <section className="bg-brand-card border-t border-brand-border py-16 px-6">
-                        <div className="max-w-4xl mx-auto text-center">
-                            <h3 className="text-2xl font-black mb-8">What our seekers say</h3>
-                            <div className="grid md:grid-cols-2 gap-6 mb-12">
-                                <div className="p-6 bg-black rounded-2xl border border-brand-border text-left">
-                                    <p className="text-brand-muted italic mb-4">"The 9:30 slot is perfect. The predictions were eerily accurate and the remedies actually worked!"</p>
-                                    <p className="text-brand-accent font-bold text-sm">- Priya S.</p>
-                                </div>
-                                <div className="p-6 bg-black rounded-2xl border border-brand-border text-left">
-                                    <p className="text-brand-muted italic mb-4">"Finally an astrologer who explains the 'why'. Very professional and smooth experience."</p>
-                                    <p className="text-brand-accent font-bold text-sm">- Rahul K.</p>
-                                </div>
-                            </div>
-                            <div className="bg-black p-8 rounded-3xl border border-brand-border max-w-xl mx-auto">
-                                <p className="text-sm font-bold mb-4">Help us improve. Leave a review:</p>
-                                <textarea placeholder="Share your experience..." className="w-full bg-brand-card border border-brand-border p-4 rounded-xl outline-none mb-4 h-24 text-sm"></textarea>
-                                <button onClick={() => alert("Thank you for your feedback!")} className="bg-white text-black px-8 py-2 rounded-lg font-bold text-sm hover:bg-brand-accent transition-colors">Submit Review</button>
-                            </div>
-                        </div>
-                    </section>
+const BookingModal = () => (
+<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl overflow-y-auto">
+<div className="bg-brand-card border border-brand-border rounded-[2rem] w-full max-w-md my-auto slide-up shadow-2xl relative">
+<div className="p-6 border-b border-brand-border flex justify-between items-center bg-[#050505]">
+<h2 className="text-lg font-bold uppercase tracking-widest">Step {step} of 4</h2>
+<button onClick={() => setIsBooking(false)} className="text-brand-muted hover:text-white">✕</button>
+</div>
 
-                    <footer className="p-10 text-center text-brand-muted text-xs border-t border-brand-border">
-                        © 2026 Astro Veda Premium. All rights reserved.
-                    </footer>
+<div className="p-8">
+{step === 1 && (
+<form onSubmit={(e) => {
+    e.preventDefault();
+    if(otpSent) {
+        if(userOtp === generatedOtp) setStep(2);
+        else alert("Wrong OTP");
+    } else {
+        handleSendOTP(e);
+    }
+}} className="space-y-4">
+    <input 
+        ref={emailInputRef}
+        type="email" 
+        required 
+        placeholder="EMAIL ADDRESS" 
+        value={email} 
+        onChange={(e)=>setEmail(e.target.value)} 
+        className="w-full bg-black border border-brand-border p-5 rounded-2xl outline-none focus:border-brand-accent text-white font-semibold" 
+        disabled={otpSent}
+    />
+    {otpSent && <input type="text" maxLength="6" placeholder="ENTER OTP" value={userOtp} onChange={(e)=>setUserOtp(e.target.value)} className="w-full bg-black border border-brand-border p-5 rounded-2xl text-center text-2xl font-black tracking-[0.4em] text-brand-accent"/>}
+    <button type="submit" className="w-full bg-white text-black font-black py-4 rounded-2xl uppercase text-xs tracking-widest hover:bg-brand-accent transition-all">
+        {isSending ? "Processing..." : (otpSent ? "Verify & Proceed" : "Send Verification Code")}
+    </button>
+</form>
+)}
 
-                    {isBooking && <BookingModal />}
-                </div>
-            );
-        }
+{step === 2 && (
+<div className="space-y-6 text-center">
+<div className="p-4 bg-brand-accent/5 border border-brand-accent/20 rounded-2xl">
+<p className="text-[10px] text-brand-accent font-bold uppercase tracking-widest">Fixed Time Slot</p>
+<p className="text-3xl font-black">09:30 PM</p>
+</div>
+<input type="date" min={today} required value={date} onChange={(e)=> { if(bookedDates.includes(e.target.value)) alert("Already Booked!"); else setDate(e.target.value); }} className="w-full bg-black border border-brand-border p-5 rounded-2xl text-white outline-none"/>
+<button onClick={()=>date ? setStep(3) : alert("Select Date")} className="w-full bg-white text-black font-black py-4 rounded-2xl uppercase text-xs tracking-widest">Next</button>
+</div>
+)}
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
+{step === 3 && (
+<div className="space-y-5 text-center">
+<div className="bg-black border border-brand-border p-5 rounded-2xl">
+<p className="text-brand-muted text-[10px] uppercase mb-1 tracking-widest">Amount to Pay</p>
+<p className="text-4xl standout-price">₹1,999</p>
+</div>
+<img src="qr-code.jpg" alt="Astro Veda UPI QR" className="w-48 h-48 mx-auto rounded-xl border border-brand-border shadow-xl"/>
+<p className="text-[10px] text-brand-muted font-bold tracking-widest uppercase">UPI ID: bafna4955@okaxis</p>
+<input type="text" placeholder="TRANSACTION ID (TXID)" value={txid} onChange={(e)=>setTxid(e.target.value)} className="w-full bg-black border border-brand-border p-4 rounded-2xl text-xs outline-none focus:border-brand-accent text-white font-bold"/>
+<button onClick={()=>txid ? setStep(4) : alert("Enter TXID")} className="w-full bg-brand-accent text-black font-black py-4 rounded-2xl uppercase text-xs tracking-widest">Verify Payment</button>
+</div>
+)}
+
+{step === 4 && (
+<div className="space-y-5 text-center">
+<h3 className="text-xl font-black uppercase">Final Step</h3>
+<p className="text-xs text-brand-muted">Provide your number so we can call you at 9:30 PM.</p>
+<div className="flex shadow-lg">
+<span className="bg-brand-border p-5 rounded-l-2xl text-brand-muted border border-r-0 border-brand-border font-bold">+91</span>
+<input type="tel" maxLength="10" placeholder="10 Digit Number" value={phone} onChange={(e)=>setPhone(e.target.value)} className="w-full bg-black border border-brand-border p-5 rounded-r-2xl outline-none font-bold text-white tracking-widest"/>
+</div>
+<button onClick={() =>finalizeBooking()} className="w-full bg-white text-black font-black py-4 rounded-2xl uppercase text-xs tracking-widest hover:bg-green-500 transition-colors">Finish Booking</button>
+</div>
+)}
+</div>
+</div>
+</div>
+);
+
+if (view === 'admin') {
+return (
+<div className="min-h-screen bg-[#050505] p-6 md:p-12 z-20 relative">
+{!isAdminLoggedIn ? (
+<div className="max-w-md mx-auto mt-20 p-10 bg-brand-card border border-brand-border rounded-[2.5rem] shadow-2xl slide-up">
+<h2 className="text-2xl font-black mb-6 text-center uppercase tracking-widest text-brand-accent">Admin Security</h2>
+<form onSubmit={(e)=> {e.preventDefault(); if (adminId === 'PRATHAM003' && adminPass === 'Pkjewellers155') setIsAdminLoggedIn(true); else alert("Access Denied"); }} className="space-y-4">
+<input type="text" placeholder="ID" value={adminId} onChange={(e)=>setAdminId(e.target.value)} className="w-full bg-black border border-brand-border p-4 rounded-2xl outline-none focus:border-brand-accent text-white"/>
+<input type="password" placeholder="Pass" value={adminPass} onChange={(e)=>setAdminPass(e.target.value)} className="w-full bg-black border border-brand-border p-4 rounded-2xl outline-none focus:border-brand-accent text-white"/>
+<button className="w-full bg-brand-accent text-black font-black py-4 rounded-2xl shadow-lg">Access Dashboard</button>
+<button type="button" onClick={()=>setView('client')} className="w-full text-brand-muted text-xs mt-4 uppercase">Return to Site</button>
+</form>
+</div>
+) : (
+<div className="max-w-6xl mx-auto">
+<div className="flex justify-between items-center mb-10">
+<h2 className="text-3xl font-black uppercase">BOOKINGS</h2>
+<button onClick={()=>setIsAdminLoggedIn(false)} className="px-6 py-2 bg-brand-border rounded-xl font-bold uppercase text-xs">Logout</button>
+</div>
+<div className="overflow-x-auto rounded-[2rem] border border-brand-border bg-brand-card shadow-2xl">
+<table className="w-full text-left">
+<thead className="bg-[#111] text-[10px] uppercase text-brand-muted tracking-[0.2em] border-b border-brand-border">
+<tr>
+<th className="p-6">Client Info</th>
+<th className="p-6">Booked Date</th>
+<th className="p-6">Contact Number</th>
+<th className="p-6">TXID</th>
+<th className="p-6">Action</th>
+</tr>
+</thead>
+<tbody className="divide-y divide-brand-border">
+{appointments.map(app => (
+<tr key={app.id} className="hover:bg-white/5 transition-colors">
+<td className="p-6">
+<p className="text-sm font-bold">{app.email}</p>
+<p className="text-[10px] text-brand-muted uppercase tracking-widest">{app.id}</p>
+</td>
+<td className="p-6 text-sm font-medium">{app.date}</td>
+<td className="p-6">
+<span className="text-brand-accent font-black text-sm">+91 {app.phone}</span>
+</td>
+<td className="p-6 text-xs text-brand-muted font-mono">{app.txid}</td>
+<td className="p-6">
+<div className="flex gap-2">
+{app.status !== 'Approved' ? (
+<button onClick={()=>handleApprove(app.id, app.date)} className="bg-green-600 px-4 py-2 rounded text-[10px] font-bold">APPROVE</button>
+) : <span className="text-green-500 font-bold text-xs uppercase">✓ Done</span>}
+<button onClick={()=>{setAppointments(appointments.filter(a => a.id !== app.id))}} className="bg-white/10 px-4 py-2 rounded text-[10px] font-bold">REMOVE</button>
+</div>
+</td>
+</tr>
+))}
+</tbody>
+</table>
+</div>
+</div>
+)}
+</div>
+);
+}
+
+return (
+<div className="min-h-screen flex flex-col selection:bg-brand-accent selection:text-black">
+<Navbar />
+{/* Background */}
+<div className="stars-container">
+{stars.map(s => (
+<div key={s.id} className="star" style={{ top: s.top, left: s.left, width: s.size, height: s.size, '--d': s.duration }}></div>
+))}
+<div className="planet w-12 h-12 bg-yellow-900/40" style={{ top: '15%', left: '10%', animation: 'float 6s infinite ease-in-out' }}></div>
+<div className="planet w-20 h-20 bg-blue-900/30" style={{ top: '60%', right: '15%', animation: 'float 8s infinite reverse' }}></div>
+</div>
+
+<main className="flex-grow flex flex-col items-center justify-center px-6 py-20 text-center z-10 relative">
+<div className="slide-up">
+
+<MilestoneSection />
+
+<h1 className="text-6xl md:text-[8rem] font-black tracking-tighter mb-4 leading-none uppercase">
+<span className="glow-white">PRECISION</span><br/><span className="glow-accent italic">ASTROLOGY</span>
+</h1>
+<p className="text-brand-muted text-lg max-w-2xl mx-auto mb-16 font-light leading-relaxed">
+Get instant clarity with our unique analysis methods. We provide logical answers to your life's most complex questions.
+</p>
+
+<div className="max-w-sm mx-auto">
+<div className="bg-brand-card p-12 rounded-[3.5rem] border border-brand-border shadow-2xl relative overflow-hidden group hover:border-brand-accent transition-all duration-700">
+<div className="absolute top-0 right-10 bg-brand-accent text-black text-[10px] font-black px-4 py-1.5 rounded-b-xl uppercase tracking-widest">Exclusive Deal</div>
+<p className="text-brand-muted line-through font-bold text-sm mb-1 opacity-60">₹3,500</p>
+<h2 className="text-7xl mb-8 tracking-tighter standout-price">₹1,999</h2>
+<button onClick={() => setIsBooking(true)} className="w-full bg-brand-accent text-black font-black py-5 rounded-[2rem] hover:scale-105 active:scale-95 transition-all shadow-xl uppercase tracking-widest text-xs">
+Book Your Slot
+</button>
+<p className="text-[10px] text-brand-muted mt-6 uppercase font-bold tracking-widest">Fixed at 09:30 PM Daily</p>
+</div>
+</div>
+</div>
+</main>
+
+{/* Review Section */}
+<section id="reviews" className="bg-brand-card border-t border-brand-border py-28 px-6 z-10 relative">
+<div className="max-w-5xl mx-auto">
+<h3 className="text-3xl font-black mb-16 text-center uppercase tracking-widest">Client Feedback</h3>
+
+<div className="grid md:grid-cols-3 gap-8 mb-24 text-left">
+{[
+{name: "Rahul V.", text: "Accuracy is shocking. Unique approach."},
+{name: "Sanya M.", text: "Practical remedies. Logical explanations."},
+{name: "Vikram", text: " patient and professional. ₹1999 well spent."}
+].map((rev, i) => (
+<div key={i} className="p-10 bg-black rounded-[3rem] border border-brand-border hover:border-brand-accent transition-all duration-500">
+<p className="text-brand-muted text-sm leading-relaxed mb-8 italic">"{rev.text}"</p>
+<p className="text-brand-accent font-black text-[10px] uppercase tracking-[0.2em]">— {rev.name}</p>
+</div>
+))}
+</div>
+
+<div className="max-w-xl mx-auto bg-[#050505] p-12 rounded-[3.5rem] border border-brand-border text-center shadow-inner">
+<h4 className="font-bold mb-2 uppercase tracking-widest">Share Feedback</h4>
+<p className="text-xs text-brand-muted mb-8 italic"> help us improve</p>
+<textarea placeholder="Describe your experience..." className="w-full bg-black border border-brand-border p-6 rounded-3xl outline-none mb-6 h-36 text-sm text-white focus:border-brand-accent transition-colors"></textarea>
+<button onClick={() => alert("Feedback sent!")} className="bg-white text-black px-12 py-4 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-brand-accent transition-colors">Submit Review</button>
+</div>
+</div>
+</section>
+
+<footer className="p-12 text-center border-t border-brand-border text-brand-muted text-[10px] font-bold uppercase tracking-[0.3em] relative z-20">
+© 2026 ASTRO VEDA PREMIUM. ESTABLISHED 1996.
+</footer>
+
+{isBooking && <BookingModal />}
+</div>
+);
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+</script>
 </body>
 </html>
