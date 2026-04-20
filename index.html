@@ -45,18 +45,17 @@
         input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
         .milestone-badge { background: rgba(250, 204, 21, 0.1); border: 1px solid rgba(250, 204, 21, 0.2); }
         
-        /* Premium File Upload Button */
         .file-upload-wrapper { position: relative; width: 100%; height: 52px; }
         .file-upload-input { position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 2; }
-        .file-upload-btn { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #111; border: 1px solid #222; display: flex; align-items: center; justify-content: center; border-radius: 16px; font-weight: 700; font-size: 13px; transition: all 0.3s; color: #a1a1aa; text-transform: uppercase; letter-spacing: 0.05em; }
-        .file-upload-input:hover + .file-upload-btn { background: #1a1a1a; border-color: #facc15; color: #fff; }
+        .file-upload-btn { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #111; border: 1px solid #333; display: flex; align-items: center; justify-content: center; border-radius: 16px; font-weight: 700; font-size: 13px; transition: all 0.3s; color: #fff; text-transform: uppercase; letter-spacing: 0.05em; }
+        .file-upload-input:hover + .file-upload-btn { background: #1a1a1a; border-color: #facc15; }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useMemo } = React;
+        const { useState, useMemo } = React;
 
         emailjs.init("8r2tapCdRmVdIbFQb"); 
 
@@ -65,19 +64,23 @@
             const [isBooking, setIsBooking] = useState(false);
             const [step, setStep] = useState(1);
             
+            // App Data
             const [bookedDates, setBookedDates] = useState(['2026-04-25']); 
             const [appointments, setAppointments] = useState([]);
 
+            // Form Data
             const [email, setEmail] = useState('');
             const [phone, setPhone] = useState('');
             const [date, setDate] = useState('');
             const [txid, setTxid] = useState('');
-            const [fileName, setFileName] = useState('Upload Payment Screenshot');
+            const [ssPreview, setSsPreview] = useState(null);
+            const [fileName, setFileName] = useState('Select Payment Screenshot');
             const [otpSent, setOtpSent] = useState(false);
             const [generatedOtp, setGeneratedOtp] = useState('');
             const [userOtp, setUserOtp] = useState('');
             const [isSending, setIsSending] = useState(false);
 
+            // Admin Login
             const [adminId, setAdminId] = useState('');
             const [adminPass, setAdminPass] = useState('');
             const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
@@ -102,31 +105,34 @@
                 try {
                     await emailjs.send("service_z2jyz5c", "template_hod7wir", { to_email: email, otp_code: code });
                     setOtpSent(true);
-                    setIsSending(false);
-                } catch (err) {
-                    alert("Email service error. Try again.");
-                    setIsSending(false);
+                } catch (err) { alert("OTP service error."); }
+                setIsSending(false);
+            };
+
+            const handleFileChange = (e) => {
+                if (e.target.files.length > 0) {
+                    const file = e.target.files[0];
+                    setFileName(file.name);
+                    setSsPreview(URL.createObjectURL(file)); // Create local link for admin panel
                 }
             };
 
             const finalizeBooking = () => {
-                const newApp = { id: 'AV-' + Math.floor(1000+Math.random()*9000), email, phone, date, status: 'Pending', txid };
+                const newApp = { 
+                    id: 'AV-' + Math.floor(1000+Math.random()*9000), 
+                    email, phone, date, txid, 
+                    screenshot: ssPreview,
+                    status: 'Pending' 
+                };
                 setAppointments([newApp, ...appointments]);
-                alert("Order Placed! Please wait for our call at 9:30 PM on your selected date.");
+                alert("Booking submitted! Expect a call at 9:30 PM on your date.");
                 setIsBooking(false);
                 setStep(1);
-                setEmail(''); setPhone(''); setTxid(''); setDate(''); setOtpSent(false); setFileName('Upload Payment Screenshot');
-            };
-
-            const handleAdminLogin = (e) => {
-                e.preventDefault();
-                if (adminId === 'PRATHAM003' && adminPass === 'Pkjewellers155') setIsAdminLoggedIn(true);
-                else alert("Invalid Credentials");
+                setEmail(''); setPhone(''); setTxid(''); setDate(''); setOtpSent(false); setSsPreview(null); setFileName('Select Payment Screenshot');
             };
 
             return (
                 <div className="min-h-screen relative">
-                    {/* Astro Background */}
                     <div className="stars-container">
                         {stars.map(s => (
                             <div key={s.id} className="star" style={{ top: s.top, left: s.left, width: s.size, height: s.size, '--d': s.duration }}></div>
@@ -137,11 +143,8 @@
 
                     <nav className="flex justify-between items-center p-8 max-w-7xl mx-auto w-full z-20 relative">
                         <div className="flex items-center gap-2 cursor-pointer select-none" onDoubleClick={() => setView('admin')} onClick={() => {setIsBooking(false); setView('client');}}>
-                            <div className="w-10 h-10 bg-brand-accent rounded-lg flex items-center justify-center text-black text-2xl">🪐</div>
+                            <div className="w-10 h-10 bg-brand-accent rounded-lg flex items-center justify-center text-black text-2xl shadow-[0_0_20px_rgba(250,204,21,0.3)]">🪐</div>
                             <span className="text-2xl font-black tracking-tighter">ASTRO<span className="text-brand-muted font-light">VEDA</span></span>
-                        </div>
-                        <div className="hidden md:flex gap-8 text-xs font-bold uppercase tracking-widest text-brand-muted">
-                            <a href="#reviews" className="hover:text-white transition-colors">Testimonials</a>
                         </div>
                     </nav>
 
@@ -149,38 +152,59 @@
                         <div className="p-6 md:p-12 z-20 relative min-h-screen">
                             {!isAdminLoggedIn ? (
                                 <div className="max-w-md mx-auto mt-20 p-10 bg-brand-card border border-brand-border rounded-[2.5rem] shadow-2xl slide-up">
-                                    <h2 className="text-2xl font-black mb-6 text-center uppercase tracking-widest">Admin login</h2>
-                                    <form onSubmit={handleAdminLogin} className="space-y-4">
-                                        <input type="text" placeholder="ID" value={adminId} onChange={(e)=>setAdminId(e.target.value)} className="w-full bg-black border border-brand-border p-4 rounded-2xl outline-none focus:border-brand-accent text-white"/>
-                                        <input type="password" placeholder="Pass" value={adminPass} onChange={(e)=>setAdminPass(e.target.value)} className="w-full bg-black border border-brand-border p-4 rounded-2xl outline-none focus:border-brand-accent text-white"/>
-                                        <button className="w-full bg-brand-accent text-black font-black py-4 rounded-2xl shadow-lg">Login</button>
-                                        <button type="button" onClick={()=>setView('client')} className="w-full text-brand-muted text-xs mt-4 font-bold uppercase tracking-widest text-center">Back to site</button>
+                                    <h2 className="text-2xl font-black mb-6 text-center uppercase tracking-widest text-brand-accent">Admin Security</h2>
+                                    <form onSubmit={(e)=> {e.preventDefault(); if (adminId === 'PRATHAM003' && adminPass === 'Pkjewellers155') setIsAdminLoggedIn(true); else alert("Access Denied"); }} className="space-y-4">
+                                        <input type="text" placeholder="Admin ID" value={adminId} onChange={(e)=>setAdminId(e.target.value)} className="w-full bg-black border border-brand-border p-4 rounded-2xl outline-none focus:border-brand-accent text-white"/>
+                                        <input type="password" placeholder="Password" value={adminPass} onChange={(e)=>setAdminPass(e.target.value)} className="w-full bg-black border border-brand-border p-4 rounded-2xl outline-none focus:border-brand-accent text-white"/>
+                                        <button className="w-full bg-brand-accent text-black font-black py-4 rounded-2xl shadow-lg">Access Dashboard</button>
+                                        <button type="button" onClick={()=>setView('client')} className="w-full text-brand-muted text-[10px] mt-4 font-bold uppercase text-center tracking-widest">Return to Site</button>
                                     </form>
                                 </div>
                             ) : (
-                                <div className="max-w-6xl mx-auto slide-up">
+                                <div className="max-w-7xl mx-auto slide-up">
                                     <div className="flex justify-between items-center mb-10">
-                                        <h2 className="text-3xl font-black uppercase">Dashboard</h2>
+                                        <h2 className="text-3xl font-black uppercase tracking-tighter">Booking Control</h2>
                                         <button onClick={()=>setIsAdminLoggedIn(false)} className="px-6 py-2 bg-brand-border rounded-xl font-bold uppercase text-xs">Logout</button>
                                     </div>
                                     <div className="overflow-x-auto rounded-[2.5rem] border border-brand-border bg-brand-card shadow-2xl">
                                         <table className="w-full text-left">
                                             <thead className="bg-[#111] text-[10px] uppercase text-brand-muted tracking-[0.2em] border-b border-brand-border">
-                                                <tr><th className="p-6">Client</th><th className="p-6">Date</th><th className="p-6">Contact</th><th className="p-6">TXID</th><th className="p-6">Action</th></tr>
+                                                <tr>
+                                                    <th className="p-6">Client Info</th>
+                                                    <th className="p-6">Appointment Date</th>
+                                                    <th className="p-6">Payment Proof</th>
+                                                    <th className="p-6">Status</th>
+                                                    <th className="p-6">Action</th>
+                                                </tr>
                                             </thead>
                                             <tbody className="divide-y divide-brand-border">
-                                                {appointments.length === 0 ? <tr><td colSpan="5" className="p-10 text-center text-brand-muted uppercase text-xs font-bold tracking-widest">No Active Bookings</td></tr> : appointments.map(app => (
-                                                    <tr key={app.id} className="hover:bg-white/5 transition-colors">
-                                                        <td className="p-6 text-sm font-bold">{app.email}<br/><span className="text-[10px] text-brand-muted uppercase tracking-tighter">{app.id}</span></td>
-                                                        <td className="p-6 text-sm font-medium">{app.date}</td>
-                                                        <td className="p-6"><span className="bg-brand-accent/10 text-brand-accent px-4 py-2 rounded-lg font-black text-sm">+91 {app.phone}</span></td>
-                                                        <td className="p-6 text-xs text-brand-muted font-mono">{app.txid}</td>
+                                                {appointments.length === 0 ? <tr><td colSpan="5" className="p-10 text-center text-brand-muted uppercase text-xs font-bold">Waiting for new requests...</td></tr> : appointments.map(app => (
+                                                    <tr key={app.id}>
                                                         <td className="p-6">
-                                                            <div className="flex gap-2">
-                                                                {app.status !== 'Approved' ? (
-                                                                    <button onClick={()=>{setAppointments(appointments.map(a => a.id === app.id ? {...a, status: 'Approved'} : a)); setBookedDates([...bookedDates, app.date])}} className="bg-green-600 px-4 py-2 rounded text-[10px] font-bold">APPROVE</button>
-                                                                ) : <span className="text-green-500 font-bold uppercase text-[10px]">✓ Locked</span>}
-                                                            </div>
+                                                            <p className="text-sm font-bold text-white">{app.email}</p>
+                                                            <p className="text-[10px] text-brand-muted font-mono uppercase mt-1">TXID: {app.txid}</p>
+                                                        </td>
+                                                        <td className="p-6">
+                                                            <p className="text-sm text-white">{app.date}</p>
+                                                            <p className="text-[10px] text-brand-accent font-bold">TIME: 09:30 PM</p>
+                                                        </td>
+                                                        <td className="p-6">
+                                                            <p className="text-sm font-black text-brand-accent mb-2">+91 {app.phone}</p>
+                                                            <a href={app.screenshot} target="_blank" className="text-[10px] bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg font-bold transition-all inline-block">VIEW SCREENSHOT</a>
+                                                        </td>
+                                                        <td className="p-6">
+                                                            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${app.status === 'Approved' ? 'bg-green-500/10 text-green-500 border border-green-500/20' : 'bg-yellow-500/10 text-brand-accent border border-yellow-500/20'}`}>
+                                                                {app.status}
+                                                            </span>
+                                                        </td>
+                                                        <td className="p-6 text-right">
+                                                            {app.status !== 'Approved' ? (
+                                                                <button onClick={()=>{
+                                                                    setAppointments(appointments.map(a => a.id === app.id ? {...a, status: 'Approved'} : a)); 
+                                                                    setBookedDates([...bookedDates, app.date]);
+                                                                    alert("Session Approved. Date is now greyed out.");
+                                                                }} className="bg-brand-accent text-black px-4 py-2 rounded-lg text-[10px] font-black hover:scale-105 active:scale-95 transition-all">APPROVE & LOCK DATE</button>
+                                                            ) : <span className="text-green-500 font-bold text-[10px] uppercase">✓ Session Confirmed</span>}
                                                         </td>
                                                     </tr>
                                                 ))}
@@ -195,24 +219,23 @@
                             <main className="flex-grow flex flex-col items-center justify-center px-6 py-20 text-center z-10 relative">
                                 <div className="slide-up">
                                     <div className="flex flex-wrap justify-center gap-4 mb-10">
-                                        <div className="milestone-badge px-6 py-2.5 rounded-full text-[10px] font-black text-brand-accent uppercase tracking-widest">30+ Years Experience</div>
-                                        <div className="milestone-badge px-6 py-2.5 rounded-full text-[10px] font-black text-brand-accent uppercase tracking-widest">5000+ Success Stories</div>
-                                        <div className="milestone-badge px-6 py-2.5 rounded-full text-[10px] font-black text-brand-accent uppercase tracking-widest">Unique Analysis Method</div>
+                                        <div className="milestone-badge px-6 py-2.5 rounded-full text-[10px] font-black text-brand-accent uppercase tracking-widest italic">30+ Years Experience</div>
+                                        <div className="milestone-badge px-6 py-2.5 rounded-full text-[10px] font-black text-brand-accent uppercase tracking-widest italic">5000+ Thriving Lives</div>
                                     </div>
 
                                     <h1 className="text-6xl md:text-[8rem] font-black tracking-tighter mb-4 leading-none uppercase">
                                         PRECISION<br/><span className="text-brand-accent italic">ASTROLOGY</span>
                                     </h1>
                                     <p className="text-brand-muted text-lg max-w-2xl mx-auto mb-16 font-light leading-relaxed">
-                                        Logical guidance that differs from traditional approaches. We provide logical answers to your life's most complex questions.
+                                        Logical answers to your life's most complex questions through unique analysis methods that differ from the rest.
                                     </p>
                                     
                                     <div className="max-w-sm mx-auto">
                                         <div className="bg-brand-card p-12 rounded-[4rem] border border-brand-border shadow-2xl relative overflow-hidden group hover:border-brand-accent transition-all duration-700">
-                                            <div className="absolute top-0 right-10 bg-brand-accent text-black text-[10px] font-black px-5 py-2 rounded-b-xl uppercase tracking-widest">Offer</div>
+                                            <div className="absolute top-0 right-10 bg-brand-accent text-black text-[10px] font-black px-5 py-2 rounded-b-xl uppercase tracking-widest">Premium Deal</div>
                                             <p className="text-brand-muted line-through font-bold text-sm mb-1 opacity-50">₹3,500</p>
                                             <h2 className="text-7xl font-black text-white mb-8 tracking-tighter">₹1,999</h2>
-                                            <button onClick={() => setIsBooking(true)} className="w-full bg-brand-accent text-black font-black py-5 rounded-[2.5rem] hover:scale-105 active:scale-95 transition-all shadow-xl uppercase tracking-[0.2em] text-[10px]">
+                                            <button onClick={() => setIsBooking(true)} className="w-full bg-brand-accent text-black font-black py-5 rounded-[2.5rem] hover:scale-105 active:scale-95 transition-all shadow-xl uppercase tracking-widest text-[10px]">
                                                 Book Your Slot
                                             </button>
                                         </div>
@@ -224,17 +247,16 @@
                                 <div className="max-w-5xl mx-auto text-center">
                                     <h3 className="text-3xl font-black mb-16 uppercase tracking-[0.3em]">Client Reviews</h3>
                                     <div className="grid md:grid-cols-3 gap-8 mb-24 text-left">
-                                        {[{n:"Rahul V.", t:"The session was shockingly accurate and actually logic-based."}, {n:"Sanya M.", t:"Clean approach. The 9:30 PM timing works perfectly."}, {n:"Deepak", t:"Unmatched quality for this price."}].map((r,i)=>(
-                                            <div key={i} className="p-8 bg-black rounded-[3rem] border border-brand-border hover:border-brand-accent transition-colors duration-500">
+                                        {[{n:"Rahul V.", t:"Shockingly accurate logic."}, {n:"Sanya M.", t:"Best consultation I have ever had."}, {n:"Deepak", t:"Practical remedies that actually work."}].map((r,i)=>(
+                                            <div key={i} className="p-8 bg-black rounded-[3rem] border border-brand-border hover:border-brand-accent transition-all duration-500">
                                                 <p className="text-brand-muted italic mb-6 text-sm leading-relaxed">"{r.t}"</p>
                                                 <p className="text-brand-accent font-black uppercase tracking-widest text-[10px]">— Seeker: {r.n}</p>
                                             </div>
                                         ))}
                                     </div>
-                                    <div className="max-w-xl mx-auto bg-[#050505] p-12 rounded-[4rem] border border-brand-border text-center shadow-inner">
-                                        <p className="text-[10px] font-black mb-6 text-brand-muted uppercase tracking-[0.2em]">Improve our divine service</p>
-                                        <textarea placeholder="Share your experience..." className="w-full bg-black border border-brand-border p-6 rounded-3xl outline-none mb-6 h-36 text-sm text-white focus:border-brand-accent"></textarea>
-                                        <button onClick={() => alert("Thank you!")} className="bg-white text-black px-12 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-brand-accent transition-colors">Submit review</button>
+                                    <div className="max-w-xl mx-auto bg-[#050505] p-12 rounded-[4rem] border border-brand-border text-center">
+                                        <textarea placeholder="Write your feedback..." className="w-full bg-black border border-brand-border p-6 rounded-3xl outline-none mb-6 h-36 text-sm text-white focus:border-brand-accent transition-colors"></textarea>
+                                        <button onClick={() => alert("Review submitted!")} className="bg-white text-black px-12 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest">Submit review</button>
                                     </div>
                                 </div>
                             </section>
@@ -249,8 +271,8 @@
                         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl">
                             <div className="bg-brand-card border border-brand-border rounded-[3rem] w-full max-w-md my-auto slide-up shadow-2xl relative">
                                 <div className="p-6 border-b border-brand-border flex justify-between items-center bg-[#050505]">
-                                    <h2 className="text-xs font-black uppercase tracking-[0.3em]">Step {step} of 4</h2>
-                                    <button onClick={() => setIsBooking(false)} className="text-brand-muted hover:text-white">✕</button>
+                                    <h2 className="text-xs font-black uppercase tracking-[0.3em]">Booking Stage {step}</h2>
+                                    <button onClick={() => setIsBooking(false)} className="text-brand-muted">✕</button>
                                 </div>
 
                                 <div className="p-8">
@@ -258,8 +280,8 @@
                                         <form onSubmit={otpSent ? (e)=>{e.preventDefault(); if(userOtp===generatedOtp)setStep(2); else alert("Wrong OTP");} : handleSendOTP} className="space-y-4">
                                             <input type="email" required placeholder="EMAIL ADDRESS" value={email} onChange={(e)=>setEmail(e.target.value)} className="w-full bg-black border border-brand-border p-5 rounded-2xl outline-none focus:border-brand-accent text-white font-semibold" disabled={otpSent} />
                                             {otpSent && <input type="text" maxLength="6" placeholder="ENTER OTP" value={userOtp} onChange={(e)=>setUserOtp(e.target.value)} className="w-full bg-black border border-brand-border p-5 rounded-2xl text-center text-2xl font-black tracking-[0.4em] text-brand-accent" />}
-                                            <button className="w-full bg-white text-black font-black py-4 rounded-2xl uppercase text-xs tracking-widest hover:bg-brand-accent transition-all">
-                                                {isSending ? "Processing..." : (otpSent ? "Verify & Continue" : "Send OTP")}
+                                            <button className="w-full bg-white text-black font-black py-4 rounded-2xl uppercase tracking-widest hover:bg-brand-accent transition-all">
+                                                {isSending ? "..." : (otpSent ? "Verify & Continue" : "Send OTP")}
                                             </button>
                                         </form>
                                     )}
@@ -267,53 +289,58 @@
                                     {step === 2 && (
                                         <div className="space-y-6 text-center">
                                             <div className="p-5 bg-brand-accent/5 border border-brand-accent/20 rounded-3xl">
-                                                <p className="text-[10px] text-brand-accent font-black uppercase tracking-widest mb-1">Fixed Time Slot</p>
+                                                <p className="text-[10px] text-brand-accent font-black uppercase mb-1">Exclusive Session</p>
                                                 <p className="text-4xl font-black text-white tracking-tighter">09:30 PM</p>
                                             </div>
-                                            <input type="date" min={today} required value={date} onChange={(e)=> { if(bookedDates.includes(e.target.value)) alert("Already Booked!"); else setDate(e.target.value); }} className="w-full bg-black border border-brand-border p-5 rounded-2xl text-white outline-none font-bold uppercase" />
-                                            <button onClick={()=>date ? setStep(3) : alert("Pick a date")} className="w-full bg-white text-black font-black py-4 rounded-2xl uppercase text-xs tracking-widest">Next Step</button>
+                                            <input type="date" min={today} required value={date} onChange={(e)=> { if(bookedDates.includes(e.target.value)) alert("Sold Out!"); else setDate(e.target.value); }} className="w-full bg-black border border-brand-border p-5 rounded-2xl text-white outline-none font-bold uppercase" />
+                                            <button onClick={()=>date ? setStep(3) : alert("Pick a date")} className="w-full bg-white text-black font-black py-4 rounded-2xl uppercase tracking-widest">Select Date</button>
                                         </div>
                                     )}
 
                                     {step === 3 && (
                                         <div className="space-y-5 text-center">
                                             <div className="bg-black border border-brand-border p-5 rounded-3xl">
-                                                <p className="text-brand-muted text-[10px] uppercase mb-1 tracking-widest">Amount to Pay</p>
+                                                <p className="text-brand-muted text-[10px] uppercase mb-1 tracking-widest">Total Amount</p>
                                                 <p className="text-4xl font-black text-brand-accent">₹1,999</p>
                                             </div>
                                             
-                                            {/* LOCAL REPOSITORY QR CODE IMAGE */}
-                                            <div className="bg-white p-3 rounded-2xl w-56 h-56 mx-auto overflow-hidden flex items-center justify-center border-4 border-brand-accent">
+                                            <div className="bg-white p-3 rounded-2xl w-56 h-56 mx-auto flex items-center justify-center border-4 border-brand-accent shadow-xl overflow-hidden">
                                                 <img src="WhatsApp Image 2026-04-20 at 3.01.01 PM.jpeg" alt="QR Code" className="max-w-full max-h-full scale-110" />
                                             </div>
                                             
-                                            <p className="text-[10px] text-brand-muted font-black uppercase tracking-widest">UPI: bafna4955@okaxis</p>
+                                            <p className="text-[10px] text-brand-muted font-black uppercase">UPI: bafna4955@okaxis</p>
                                             
-                                            <div className="space-y-4">
-                                                <input type="text" placeholder="TXID (TRANSACTION ID)" value={txid} onChange={(e)=>setTxid(e.target.value)} className="w-full bg-black border border-brand-border p-4 rounded-2xl text-xs outline-none focus:border-brand-accent text-white font-bold" />
+                                            <div className="space-y-4 text-left">
+                                                <input type="text" placeholder="TXID (TRANSACTION ID)" value={txid} onChange={(e)=>setTxid(e.target.value)} className="w-full bg-black border border-brand-border p-4 rounded-2xl text-sm outline-none focus:border-brand-accent text-white font-bold" />
                                                 
                                                 <div className="file-upload-wrapper">
-                                                    <input type="file" accept="image/*" className="file-upload-input" onChange={(e) => e.target.files[0] && setFileName(e.target.files[0].name)} />
-                                                    <div className="file-upload-btn">
+                                                    <input type="file" accept="image/*" className="file-upload-input" onChange={handleFileChange} />
+                                                    <div className="file-upload-btn shadow-lg shadow-black/50">
                                                         <span className="truncate px-6 uppercase tracking-widest">{fileName}</span>
                                                     </div>
                                                 </div>
                                             </div>
                                             
-                                            <button onClick={()=>txid ? setStep(4) : alert("Enter Transaction ID")} className="w-full bg-brand-accent text-black font-black py-4 rounded-2xl uppercase text-xs tracking-widest shadow-lg shadow-yellow-900/20">Verify & Continue</button>
+                                            <button 
+                                                disabled={!txid || !ssPreview} 
+                                                onClick={()=>setStep(4)} 
+                                                className={`w-full font-black py-4 rounded-2xl uppercase text-xs tracking-widest transition-all ${(!txid || !ssPreview) ? 'bg-brand-border text-brand-muted cursor-not-allowed grayscale' : 'bg-brand-accent text-black active:scale-95 shadow-lg shadow-yellow-900/20'}`}
+                                            >
+                                                Verify & Continue
+                                            </button>
                                         </div>
                                     )}
 
                                     {step === 4 && (
                                         <div className="space-y-6 text-center">
-                                            <div className="w-16 h-16 bg-green-500/10 text-green-500 rounded-full flex items-center justify-center mx-auto text-2xl mb-2">✓</div>
-                                            <h3 className="text-xl font-black uppercase tracking-tighter">Final Step</h3>
-                                            <p className="text-[11px] text-brand-muted leading-relaxed uppercase tracking-widest">Enter your mobile number so our team can contact you for the consultation.</p>
+                                            <div className="w-16 h-16 bg-green-500/10 text-green-500 rounded-full flex items-center justify-center mx-auto text-2xl">✓</div>
+                                            <h3 className="text-xl font-black uppercase tracking-tighter text-white">Call Details</h3>
+                                            <p className="text-[11px] text-brand-muted leading-relaxed uppercase tracking-widest">Enter your mobile number for the 9:30 PM call.</p>
                                             <div className="flex shadow-2xl">
-                                                <span className="bg-brand-border p-5 rounded-l-2xl text-brand-muted border-brand-border border font-bold text-xs">+91</span>
+                                                <span className="bg-brand-border p-5 rounded-l-2xl text-brand-muted font-bold text-xs">+91</span>
                                                 <input type="tel" maxLength="10" placeholder="NUMBER" value={phone} onChange={(e)=>setPhone(e.target.value)} className="w-full bg-black border border-brand-border p-5 rounded-r-2xl outline-none font-black text-white tracking-[0.2em]" />
                                             </div>
-                                            <button onClick={() => phone.length === 10 ? finalizeBooking() : alert("Enter 10 digits")} className="w-full bg-white text-black font-black py-4 rounded-2xl uppercase text-xs tracking-widest hover:bg-brand-accent transition-colors">Complete Booking</button>
+                                            <button onClick={() => phone.length === 10 ? finalizeBooking() : alert("Enter 10 digits")} className="w-full bg-white text-black font-black py-4 rounded-2xl tracking-widest hover:bg-brand-accent">Finish Booking</button>
                                         </div>
                                     )}
                                 </div>
