@@ -18,11 +18,11 @@ tailwind.config = {
         extend: {
             colors: {
                 brand: {
-                    bg: '#020410',
-                    card: 'rgba(15, 23, 42, 0.6)',
-                    border: 'rgba(255, 255, 255, 0.1)',
-                    purple: '#a855f7',
-                    blue: '#3b82f6'
+                    bg: '#000000',
+                    card: 'rgba(10, 10, 10, 0.8)',
+                    border: 'rgba(250, 204, 21, 0.2)',
+                    accent: '#facc15',
+                    muted: '#a1a1aa'
                 }
             }
         }
@@ -30,17 +30,19 @@ tailwind.config = {
 }
 </script>
 <style>
-body { background-color: #020410; color: #fff; font-family: 'Plus Jakarta Sans', sans-serif; overflow-x: hidden; margin: 0; scroll-behavior: smooth; }
+body { background-color: #000; color: #fff; font-family: 'Plus Jakarta Sans', sans-serif; overflow-x: hidden; margin: 0; }
 
-/* SCRROL SYNC & PERFORMANCE */
+/* FIX FOR CHOPPY SCROLL: Hardware Accelerated Video */
 .video-bg-container {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
-    height: 110vh; /* Extra height for scroll movement */
+    height: 100%;
     z-index: -1;
-    will-change: transform; /* Boosts performance */
+    pointer-events: none;
+    transform: translateZ(0); /* Force GPU rendering */
+    will-change: transform;
 }
 .video-bg-container video {
     width: 100%;
@@ -51,40 +53,36 @@ body { background-color: #020410; color: #fff; font-family: 'Plus Jakarta Sans',
 .video-overlay {
     position: absolute;
     inset: 0;
-    background: radial-gradient(circle at center, transparent 0%, #020410 90%);
+    background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.85) 100%);
 }
 
-/* NEON GLOW TEXT */
-.glow-title {
-    background: linear-gradient(135deg, #fff 0%, #3b82f6 50%, #a855f7 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.5));
+/* FONT COLOR & GLOW EFFECTS */
+.glow-gold {
+    color: #facc15;
+    text-shadow: 0 0 15px rgba(250, 204, 21, 0.6), 0 0 30px rgba(250, 204, 21, 0.3);
+}
+.glow-white {
+    color: #ffffff;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
 }
 
-.glow-nav {
-    color: #fff;
-    text-shadow: 0 0 10px rgba(168, 85, 247, 0.8);
-    letter-spacing: 0.1em;
+/* SMOOTH REVEAL */
+.reveal {
+    animation: fadeInUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
-
-/* SMOOTH ENTRANCE ANIMATIONS */
 @keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(40px); filter: blur(10px); }
+    from { opacity: 0; transform: translateY(20px); filter: blur(5px); }
     to { opacity: 1; transform: translateY(0); filter: blur(0); }
 }
-.reveal { animation: fadeInUp 1s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
 
-.milestone-badge { 
-    background: rgba(255, 255, 255, 0.05); 
-    border: 1px solid rgba(255, 255, 255, 0.1); 
-    backdrop-filter: blur(10px);
-    transition: all 0.4s ease;
+.glass {
+    background: rgba(15, 15, 15, 0.7);
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(250, 204, 21, 0.15);
 }
-.milestone-badge:hover { border-color: #a855f7; transform: translateY(-5px); }
 
-::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-thumb { background: #facc15; border-radius: 10px; }
 </style>
 </head>
 <body>
@@ -94,11 +92,11 @@ body { background-color: #020410; color: #fff; font-family: 'Plus Jakarta Sans',
 const { useState, useEffect, useMemo, useRef, memo } = React;
 emailjs.init("8r2tapCdRmVdIbFQb"); 
 
-// Performance Optimized Background Component
-const BackgroundLayer = memo(({ scrollOffset }) => {
+// Background component that doesn't re-render on state changes
+const MotionBackground = memo(({ scrollY }) => {
     return (
-        <div className="video-bg-container" style={{ transform: `translateY(${scrollOffset * -0.15}px) scale(${1 + scrollOffset * 0.0001})` }}>
-            <video autoPlay muted loop playsinline poster="image_1c48db.jpg">
+        <div className="video-bg-container" style={{ transform: `scale(${1 + scrollY * 0.0001})` }}>
+            <video autoPlay muted loop playsInline>
                 <source src="Untitled design (2).mp4" type="video/mp4" />
             </video>
             <div className="video-overlay"></div>
@@ -110,7 +108,7 @@ function App() {
     const [view, setView] = useState('client');
     const [isBooking, setIsBooking] = useState(false);
     const [step, setStep] = useState(1);
-    const [scrollOffset, setScrollOffset] = useState(0);
+    const [scrollY, setScrollY] = useState(0);
 
     // Form States
     const [email, setEmail] = useState('');
@@ -121,25 +119,14 @@ function App() {
     const [userOtp, setUserOtp] = useState('');
     const [generatedOtp, setGeneratedOtp] = useState('');
     const [isSending, setIsSending] = useState(false);
-    
-    // System States
-    const [appointments, setAppointments] = useState([]);
     const [bookedDates, setBookedDates] = useState(['2026-04-25']);
+    const [appointments, setAppointments] = useState([]);
 
-    // Scroll Sync Engine
+    // High-performance scroll listener
     useEffect(() => {
-        let requestTick = false;
-        const handleScroll = () => {
-            if (!requestTick) {
-                window.requestAnimationFrame(() => {
-                    setScrollOffset(window.pageYOffset);
-                    requestTick = false;
-                });
-                requestTick = true;
-            }
-        };
-        window.addEventListener("scroll", handleScroll);
-        return () => window.removeEventListener("scroll", handleScroll);
+        const onScroll = () => setScrollY(window.pageYOffset);
+        window.addEventListener("scroll", onScroll, { passive: true });
+        return () => window.removeEventListener("scroll", onScroll);
     }, []);
 
     const handleSendOTP = async (e) => {
@@ -150,75 +137,66 @@ function App() {
         try {
             await emailjs.send("service_z2jyz5c", "template_hod7wir", { to_email: email, otp_code: code });
             setOtpSent(true);
-        } catch (err) { alert("Verification Error"); }
+        } catch (err) { alert("Verification failed."); }
         setIsSending(false);
     };
 
     const finalizeBooking = () => {
-        const newApp = { id: 'AV-' + Date.now().toString().slice(-4), email, phone, date, status: 'Pending', txid };
+        const newApp = { id: 'AV-' + Date.now().toString().slice(-4), email, phone, date, txid, status: 'Pending' };
         setAppointments([newApp, ...appointments]);
         alert("Wait for the approval from the Astro Veda");
         setIsBooking(false); setStep(1);
-        setEmail(''); setPhone(''); setDate(''); setTxid(''); setOtpSent(false);
     };
 
     return (
         <div className="min-h-screen flex flex-col">
-            <BackgroundLayer scrollOffset={scrollOffset} />
+            <MotionBackground scrollY={scrollY} />
             
-            <nav className="flex justify-between items-center p-10 max-w-7xl mx-auto w-full z-20 relative">
+            <nav className="flex justify-between items-center p-8 max-w-7xl mx-auto w-full z-20 relative">
                 <div className="cursor-pointer select-none" onDoubleClick={() => setView('admin')} onClick={() => setView('client')}>
-                    <span className="text-3xl font-black glow-nav uppercase tracking-tighter">ASTROVEDA</span>
+                    <span className="text-3xl font-black glow-gold uppercase tracking-tighter">ASTROVEDA</span>
                 </div>
-                <div className="flex gap-10 items-center">
-                    <a href="#reviews" className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-white transition">Testimonials</a>
-                    <button onClick={() => setIsBooking(true)} className="px-8 py-3 bg-white text-black font-black rounded-full text-[10px] uppercase tracking-widest hover:bg-brand-purple hover:text-white transition-all shadow-xl shadow-purple-500/20">Book Now</button>
-                </div>
+                <button onClick={() => setIsBooking(true)} className="px-6 py-2 bg-brand-accent text-black font-black rounded-full text-[10px] uppercase tracking-widest hover:scale-105 transition-all">Book Now</button>
             </nav>
 
             {view === 'client' ? (
                 <>
-                    <main className="flex-grow flex flex-col items-center justify-center px-6 py-24 text-center z-10">
+                    <main className="flex-grow flex flex-col items-center justify-center px-6 py-20 text-center z-10 relative">
                         <div className="reveal">
-                            <div className="flex flex-wrap justify-center gap-4 mb-12">
-                                <div className="milestone-badge px-6 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest text-brand-purple">30+ Years Experience</div>
-                                <div className="milestone-badge px-6 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest text-brand-blue">5000+ Thriving Lives</div>
-                                <div className="milestone-badge px-6 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest text-brand-accent">Unique Analysis</div>
-                            </div>
-                            
-                            <h1 className="text-6xl md:text-[9.5rem] font-black tracking-tighter mb-6 leading-[0.85] uppercase glow-title">
-                                PRECISION<br/><span className="text-white opacity-90">ASTROLOGY</span>
+                            <h1 className="text-6xl md:text-[9rem] font-black tracking-tighter mb-4 leading-none uppercase">
+                                <span className="glow-white">PRECISION</span><br/>
+                                <span className="glow-gold italic">ASTROLOGY</span>
                             </h1>
                             
-                            <p className="text-slate-400 text-lg md:text-xl max-w-xl mx-auto mb-16 font-medium leading-relaxed italic">
-                                Logic-based cosmic guidance for the modern world.
+                            <p className="text-slate-300 text-lg max-w-xl mx-auto mb-16 font-medium leading-relaxed">
+                                Elite cosmic analysis using unique Vedic methods. <br/>
+                                <span className="text-brand-accent">Exclusive Session: 09:30 PM Daily</span>
                             </p>
 
                             <div className="max-w-sm mx-auto">
-                                <div className="glass p-14 rounded-[4rem] border-white/5 relative shadow-2xl transition-transform hover:scale-105 duration-500">
+                                <div className="glass p-12 rounded-[3.5rem] relative overflow-hidden group">
                                     <p className="text-slate-500 line-through font-bold text-sm mb-1">₹3,500</p>
-                                    <h2 className="text-7xl font-bold text-white mb-10 tracking-tighter">₹1,999</h2>
-                                    <button onClick={() => setIsBooking(true)} className="w-full bg-brand-purple text-white font-black py-5 rounded-2xl uppercase tracking-widest text-xs hover:brightness-125 transition-all shadow-xl shadow-purple-500/40">
-                                        Secure Slot
+                                    <h2 className="text-7xl font-bold text-white mb-8 tracking-tighter">₹1,999</h2>
+                                    <button onClick={() => setIsBooking(true)} className="w-full bg-white text-black font-black py-5 rounded-2xl hover:bg-brand-accent transition-all shadow-xl uppercase text-[10px] tracking-widest">
+                                        Reserve Your Slot
                                     </button>
-                                    <p className="text-[10px] text-slate-500 mt-6 uppercase tracking-widest font-bold">Fixed at 09:30 PM Daily</p>
                                 </div>
                             </div>
                         </div>
                     </main>
 
-                    <section id="reviews" className="py-32 px-10 z-10 bg-black/40 backdrop-blur-md border-t border-white/5">
-                        <div className="max-w-6xl mx-auto">
-                            <h3 className="text-4xl font-black mb-20 text-center uppercase tracking-widest glow-nav">Seeker Feedback</h3>
-                            <div className="grid md:grid-cols-3 gap-10">
+                    <section id="reviews" className="py-32 px-10 z-10 border-t border-white/5 bg-black/40 backdrop-blur-sm">
+                        <div className="max-w-6xl mx-auto text-center">
+                            <h3 className="text-3xl font-black mb-20 glow-gold uppercase tracking-widest">Seeker Reviews</h3>
+                            <div className="grid md:grid-cols-3 gap-8">
                                 {[
-                                    {n: "Aryan M.", t: "Shockingly accurate. No generic talk, only precise facts that made sense for my business."},
-                                    {n: "Priya S.", t: "30 years of expertise is clearly visible. The remedies provided were simple and logical."},
-                                    {n: "Kabir", t: "Best consulting experience. The 9:30 PM timing is perfect for professionals."}
+                                    {n: "Aryan M.", t: "The session was shockingly accurate and actually logic-based."},
+                                    {n: "Priya S.", t: "30 years of expertise shows in the remedies. They are simple and effective."},
+                                    {n: "Kabir", t: "The 9:30 PM slot is perfect. Very professional service."}
                                 ].map((r, i) => (
-                                    <div key={i} className="glass p-10 rounded-[3rem] border-white/5 hover:border-brand-purple/40 transition-all duration-500 hover:-translate-y-2">
-                                        <p className="text-slate-300 italic text-sm mb-8 leading-relaxed">"{r.t}"</p>
-                                        <p className="text-brand-purple font-black uppercase text-[10px] tracking-widest">— {r.n}</p>
+                                    <div key={i} className="glass p-10 rounded-[3rem] text-left border-white/5">
+                                        <p className="text-slate-300 italic text-sm mb-6 leading-relaxed">"{r.t}"</p>
+                                        <p className="text-brand-accent font-black uppercase text-[10px] tracking-widest">— {r.n}</p>
                                     </div>
                                 ))}
                             </div>
@@ -226,25 +204,23 @@ function App() {
                     </section>
                 </>
             ) : (
-                <div className="p-12 z-20 max-w-6xl mx-auto w-full">
-                    <div className="flex justify-between items-center mb-12">
-                        <h2 className="text-3xl font-black uppercase glow-nav">Admin Dashboard</h2>
-                        <button onClick={()=>setIsAdminLoggedIn(false)} className="px-6 py-2 bg-brand-purple rounded-xl font-bold uppercase text-[10px]">Logout</button>
+                <div className="p-10 z-20 max-w-6xl mx-auto w-full">
+                    <div className="flex justify-between items-center mb-10">
+                        <h2 className="text-3xl font-black uppercase glow-gold">Admin Panel</h2>
+                        <button onClick={()=>setIsAdminLoggedIn(false)} className="px-6 py-2 bg-brand-accent text-black rounded-xl font-bold uppercase text-[10px]">Logout</button>
                     </div>
-                    <div className="glass rounded-[3rem] overflow-hidden border-white/5">
+                    <div className="glass rounded-[3rem] overflow-hidden">
                         <table className="w-full text-left">
                             <thead className="bg-white/5 text-[10px] uppercase text-slate-500 tracking-widest">
-                                <tr><th className="p-8">Client Details</th><th className="p-8">Date</th><th className="p-8">Contact</th><th className="p-8">Status</th></tr>
+                                <tr><th className="p-8">Client</th><th className="p-8">Date</th><th className="p-8">Phone</th><th className="p-8">Status</th></tr>
                             </thead>
-                            <tbody className="divide-y divide-white/5">
+                            <tbody className="divide-y divide-white/5 text-sm">
                                 {appointments.map(app => (
-                                    <tr key={app.id} className="hover:bg-white/5">
-                                        <td className="p-8 font-bold text-sm">{app.email}<br/><span className="text-[10px] text-slate-500 uppercase">{app.id}</span></td>
-                                        <td className="p-8 text-sm">{app.date}</td>
-                                        <td className="p-8 text-brand-blue font-bold tracking-widest">+91 {app.phone}</td>
-                                        <td className="p-8">
-                                            <span className="px-4 py-1.5 rounded-full bg-yellow-500/10 text-yellow-500 text-[10px] font-black uppercase">Pending</span>
-                                        </td>
+                                    <tr key={app.id}>
+                                        <td className="p-8 font-bold">{app.email}</td>
+                                        <td className="p-8">{app.date}</td>
+                                        <td className="p-8 text-brand-accent">+91 {app.phone}</td>
+                                        <td className="p-8"><span className="text-yellow-500 font-black uppercase text-[10px]">Pending</span></td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -255,50 +231,46 @@ function App() {
 
             {isBooking && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
-                    <div className="glass w-full max-w-md rounded-[3rem] overflow-hidden slide-up border-brand-purple/20">
-                        <div className="p-8 border-b border-white/5 flex justify-between items-center bg-black/20">
-                            <h2 className="text-xs font-black uppercase tracking-widest text-brand-purple">Appointment Stage {step}</h2>
+                    <div className="glass w-full max-w-md rounded-[3rem] overflow-hidden slide-up">
+                        <div className="p-6 border-b border-white/5 flex justify-between items-center">
+                            <h2 className="text-xs font-bold uppercase tracking-widest text-brand-accent">Step {step} of 4</h2>
                             <button onClick={() => setIsBooking(false)} className="text-white text-xl">✕</button>
                         </div>
                         <div className="p-10">
                             {step === 1 && (
-                                <form onSubmit={(e)=>{
-                                    e.preventDefault();
-                                    if(otpSent) { if(userOtp===generatedOtp) setStep(2); else alert("Invalid OTP"); }
-                                    else handleSendOTP(e);
-                                }} className="space-y-4">
-                                    <input type="email" required placeholder="EMAIL ADDRESS" value={email} onChange={(e)=>setEmail(e.target.value)} className="w-full bg-black/40 border border-white/10 p-5 rounded-2xl outline-none focus:border-brand-purple text-white font-semibold" disabled={otpSent}/>
-                                    {otpSent && <input type="text" maxLength="6" placeholder="ENTER CODE" value={userOtp} onChange={(e)=>setUserOtp(e.target.value)} className="w-full bg-black border border-brand-purple/50 p-5 rounded-2xl text-center text-3xl font-black tracking-[0.3em] text-white"/>}
-                                    <button type="submit" className="w-full bg-white text-black font-black py-5 rounded-2xl uppercase tracking-widest text-xs hover:bg-brand-purple hover:text-white transition">
-                                        {isSending ? "Processing..." : (otpSent ? "Verify Identity" : "Generate OTP")}
+                                <form onSubmit={(e) => { e.preventDefault(); if(otpSent && userOtp===generatedOtp) setStep(2); else if(!otpSent) handleSendOTP(e); else alert("Wrong OTP"); }} className="space-y-4">
+                                    <input type="email" required placeholder="EMAIL ADDRESS" value={email} onChange={(e)=>setEmail(e.target.value)} className="w-full bg-black/40 border border-white/10 p-5 rounded-2xl outline-none focus:border-brand-accent text-white font-semibold" disabled={otpSent}/>
+                                    {otpSent && <input type="text" maxLength="6" placeholder="ENTER OTP" value={userOtp} onChange={(e)=>setUserOtp(e.target.value)} className="w-full bg-black border border-brand-accent/30 p-5 rounded-2xl text-center text-2xl font-black tracking-widest text-brand-accent"/>}
+                                    <button type="submit" className="w-full bg-white text-black font-black py-5 rounded-2xl uppercase tracking-widest text-xs hover:bg-brand-accent">
+                                        {isSending ? "..." : (otpSent ? "Verify" : "Send OTP")}
                                     </button>
                                 </form>
                             )}
                             {step === 2 && (
                                 <div className="space-y-6 text-center">
-                                    <p className="text-[10px] text-brand-purple font-black uppercase tracking-[0.2em]">Daily slot at 09:30 PM</p>
-                                    <input type="date" min={today} required value={date} onChange={(e)=>setDate(e.target.value)} className="w-full bg-black/40 border border-white/10 p-5 rounded-2xl text-white outline-none text-center font-bold"/>
-                                    <button onClick={()=>date ? setStep(3) : alert("Choose Date")} className="w-full bg-white text-black font-black py-5 rounded-2xl uppercase tracking-widest text-xs">Confirm Schedule</button>
+                                    <p className="text-[10px] text-brand-accent font-bold uppercase">Time Slot: 09:30 PM</p>
+                                    <input type="date" min={today} required value={date} onChange={(e)=>setDate(e.target.value)} className="w-full bg-black/40 border border-white/10 p-5 rounded-2xl text-white outline-none"/>
+                                    <button onClick={()=>date ? setStep(3) : alert("Pick date")} className="w-full bg-white text-black font-black py-5 rounded-2xl uppercase text-xs">Continue</button>
                                 </div>
                             )}
                             {step === 3 && (
                                 <div className="space-y-6 text-center">
-                                    <div className="bg-white p-4 rounded-3xl w-56 h-56 mx-auto flex items-center justify-center border-4 border-brand-purple">
+                                    <div className="bg-white p-3 rounded-3xl w-52 h-52 mx-auto flex items-center justify-center border-4 border-brand-accent shadow-xl">
                                         <img src="WhatsApp Image 2026-04-20 at 3.01.01 PM.jpeg" alt="QR" className="max-w-full max-h-full" />
                                     </div>
-                                    <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest">Pay ₹1,999 to bafna4955@okaxis</p>
-                                    <input type="text" placeholder="TXID (TRANSACTION ID)" value={txid} onChange={(e)=>setTxid(e.target.value)} className="w-full bg-black border border-white/10 p-5 rounded-2xl text-xs outline-none focus:border-brand-purple text-white font-bold"/>
-                                    <button onClick={()=>txid ? setStep(4) : alert("Enter TXID")} className="w-full bg-brand-purple text-white font-black py-5 rounded-2xl uppercase tracking-widest text-xs">Next Step</button>
+                                    <p className="text-[10px] text-slate-400 font-bold tracking-widest uppercase">UPI: bafna4955@okaxis</p>
+                                    <input type="text" placeholder="TXID" value={txid} onChange={(e)=>setTxid(e.target.value)} className="w-full bg-black/40 border border-white/10 p-4 rounded-2xl text-xs outline-none focus:border-brand-accent text-white font-bold"/>
+                                    <button onClick={()=>txid ? setStep(4) : alert("Enter TXID")} className="w-full bg-brand-accent text-black font-black py-5 rounded-2xl uppercase text-xs">Verify Payment</button>
                                 </div>
                             )}
                             {step === 4 && (
                                 <div className="space-y-6 text-center">
-                                    <h3 className="text-xl font-black uppercase">Contact Number</h3>
+                                    <h3 className="text-xl font-black uppercase text-white">Call Details</h3>
                                     <div className="flex shadow-2xl">
-                                        <span className="bg-white/10 p-5 rounded-l-2xl text-slate-400 font-bold border border-white/5">+91</span>
-                                        <input type="tel" maxLength="10" placeholder="0000000000" value={phone} onChange={(e)=>setPhone(e.target.value)} className="w-full bg-black border border-white/10 p-5 rounded-r-2xl outline-none font-black text-white text-xl tracking-widest" />
+                                        <span className="bg-white/10 p-5 rounded-l-2xl text-slate-400 font-bold">+91</span>
+                                        <input type="tel" maxLength="10" placeholder="0000000000" value={phone} onChange={(e)=>setPhone(e.target.value)} className="w-full bg-black border border-brand-border p-5 rounded-r-2xl outline-none font-black text-white text-xl tracking-widest" />
                                     </div>
-                                    <button onClick={() => finalizeBooking()} className="w-full bg-white text-black font-black py-5 rounded-2xl uppercase tracking-widest text-xs">Finalize Booking</button>
+                                    <button onClick={() => finalizeBooking()} className="w-full bg-white text-black font-black py-5 rounded-2xl tracking-widest active:scale-95 transition">Finish Booking</button>
                                 </div>
                             )}
                         </div>
