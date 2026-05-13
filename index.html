@@ -35,16 +35,15 @@ body { background-color: #000; color: #fff; font-family: 'Inter', sans-serif; ov
 @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
 .slide-up { animation: slideUp 0.6s ease-out forwards; }
 
-/* Parallax Video Background */
+/* Cinematic Video Background */
 .video-bg-container {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
-    height: 110vh; /* Extra height for scroll movement */
+    height: 100%;
     z-index: -1;
     overflow: hidden;
-    will-change: transform;
 }
 .video-bg-container video {
     width: 100%;
@@ -55,62 +54,45 @@ body { background-color: #000; color: #fff; font-family: 'Inter', sans-serif; ov
 .video-overlay {
     position: absolute;
     inset: 0;
-    background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.9) 100%);
+    background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.85) 100%);
 }
 
 input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
-.milestone-badge { background: rgba(250, 204, 21, 0.08); border: 1px solid rgba(250, 204, 21, 0.2); backdrop-filter: blur(8px); transition: transform 0.3s; }
-.milestone-badge:hover { transform: translateY(-5px); }
+.milestone-badge { background: rgba(250, 204, 21, 0.08); border: 1px solid rgba(250, 204, 21, 0.2); backdrop-filter: blur(8px); }
 
 /* GLOWING TEXT EFFECTS */
 .glow-accent {
-    color: #facc15;
-    text-shadow: 0 0 15px rgba(250, 204, 21, 0.8), 0 0 30px rgba(250, 204, 21, 0.4);
+color: #facc15;
+text-shadow: 0 0 15px rgba(250, 204, 21, 0.8), 0 0 30px rgba(250, 204, 21, 0.4);
 }
 .glow-white {
-    color: #fff;
-    text-shadow: 0 0 15px rgba(255, 255, 255, 0.7), 0 0 30px rgba(255, 255, 255, 0.4);
+color: #fff;
+text-shadow: 0 0 15px rgba(255, 255, 255, 0.7), 0 0 30px rgba(255, 255, 255, 0.3);
 }
 
 ::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #000; }
 ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #444; }
 </style>
 </head>
 <body>
 <div id="root"></div>
 
 <script type="text/babel">
-const { useState, useEffect, useMemo, useRef, memo } = React;
+const { useState, useEffect, useMemo, useRef } = React;
 
 emailjs.init("8r2tapCdRmVdIbFQb"); 
-
-// PREVENT RE-RENDER BUG: Memoized Background
-const Background = memo(({ scrollY }) => {
-    return (
-        <div className="video-bg-container" style={{ transform: `translateY(${scrollY * 0.2}px) scale(${1 + scrollY * 0.0001})` }}>
-            <video autoplay muted loop playsinline>
-                <source src="Untitled design (2).mp4" type="video/mp4" />
-            </video>
-            <div className="video-overlay"></div>
-        </div>
-    );
-});
 
 function App() {
 const [view, setView] = useState('client');
 const [isBooking, setIsBooking] = useState(false);
 const [step, setStep] = useState(1);
-const [scrollY, setScrollY] = useState(0);
-
-// Scroll listener for motion effect
-useEffect(() => {
-    const handleScroll = () => setScrollY(window.scrollY);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-}, []);
 
 const [bookedDates, setBookedDates] = useState(['2026-04-25']); 
-const [appointments, setAppointments] = useState([]);
+const [appointments, setAppointments] = useState([
+{ id: 'AV-7721', email: 'client@example.com', phone: '9898989898', date: '2026-04-25', status: 'Approved', txid: 'TXN12345' }
+]);
 
 const [email, setEmail] = useState('');
 const [phone, setPhone] = useState('');
@@ -126,6 +108,21 @@ const [adminPass, setAdminPass] = useState('');
 const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
 
 const today = new Date().toISOString().split('T')[0];
+const emailInputRef = useRef(null);
+
+const handleApprove = (id, selectedDate) => {
+    setAppointments(appointments.map(app => app.id === id ? {...app, status: 'Approved'} : app));
+    if (!bookedDates.includes(selectedDate)) {
+        setBookedDates([...bookedDates, selectedDate]);
+    }
+    alert(`Appointment approved. Date ${selectedDate} is now locked.`);
+};
+
+const handleAdminLogin = (e) => {
+    e.preventDefault();
+    if (adminId === 'PRATHAM003' && adminPass === 'Pkjewellers155') setIsAdminLoggedIn(true);
+    else alert("Invalid Credentials");
+};
 
 const handleSendOTP = async (e) => {
     e.preventDefault();
@@ -136,93 +133,98 @@ const handleSendOTP = async (e) => {
     try {
         await emailjs.send("service_z2jyz5c", "template_hod7wir", { to_email: email, otp_code: code });
         setOtpSent(true);
-    } catch (err) { alert("Email service error."); }
-    setIsSending(false);
+        setIsSending(false);
+        setTimeout(() => emailInputRef.current?.focus(), 100);
+    } catch (err) {
+        alert("Email service error.");
+        setIsSending(false);
+    }
 };
 
 const finalizeBooking = () => {
-    if (phone.length !== 10) { alert("Invalid number."); return; }
+    if (!phone || phone.length !== 10) { alert("Invalid number."); return; }
     const newApp = { id: 'AV-' + Math.floor(1000+Math.random()*9000), email, phone, date, status: 'Pending', txid };
     setAppointments([newApp, ...appointments]);
     alert("Wait for the approval from the Astro Veda");
-    setIsBooking(false); setStep(1);
+    setIsBooking(false);
+    setStep(1);
     setEmail(''); setPhone(''); setTxid(''); setDate(''); setOtpSent(false);
 };
 
 const Navbar = () => (
 <nav className="flex justify-between items-center p-8 max-w-7xl mx-auto w-full z-20 relative">
-    <div className="flex items-center gap-4 cursor-pointer select-none" onDoubleClick={() => setView('admin')} onClick={() => setView('client')}>
-        <span className="text-4xl font-black tracking-tighter glow-white uppercase">ASTRO<span className="text-brand-muted font-light">VEDA</span></span>
-    </div>
-    <div className="hidden md:flex gap-8 text-xs font-bold uppercase tracking-widest text-brand-muted">
-        <a href="#reviews" className="hover:text-white transition-colors">Client Feedback</a>
-    </div>
+<div className="flex items-center gap-4 cursor-pointer select-none" onDoubleClick={() => setView('admin')} onClick={() => setView('client')}>
+<span className="text-4xl font-black tracking-tighter glow-white uppercase">ASTRO<span className="text-brand-muted font-light">VEDA</span></span>
+</div>
+<div className="hidden md:flex gap-8 text-xs font-bold uppercase tracking-widest text-brand-muted">
+<a href="#reviews" className="hover:text-white transition-colors">Client Feedback</a>
+</div>
 </nav>
 );
 
 const BookingModal = () => (
 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl overflow-y-auto">
 <div className="bg-brand-card border border-brand-border rounded-[2rem] w-full max-w-md my-auto slide-up shadow-2xl relative">
-    <div className="p-6 border-b border-brand-border flex justify-between items-center bg-[#050505]">
-        <h2 className="text-lg font-bold uppercase tracking-widest text-brand-accent">Booking Step {step}</h2>
-        <button onClick={() => setIsBooking(false)} className="text-brand-muted hover:text-white text-xl">✕</button>
-    </div>
+<div className="p-6 border-b border-brand-border flex justify-between items-center bg-[#050505]">
+<h2 className="text-lg font-bold uppercase tracking-widest">Step {step} of 4</h2>
+<button onClick={() => setIsBooking(false)} className="text-brand-muted hover:text-white">✕</button>
+</div>
 
-    <div className="p-8">
-    {step === 1 && (
-    <form onSubmit={(e) => {
-        e.preventDefault();
-        if(otpSent) {
-            if(userOtp === generatedOtp) setStep(2);
-            else alert("Wrong OTP");
-        } else { handleSendOTP(e); }
-    }} className="space-y-4">
-        <input type="email" required placeholder="EMAIL ADDRESS" value={email} onChange={(e)=>setEmail(e.target.value)} className="w-full bg-black border border-brand-border p-5 rounded-2xl outline-none focus:border-brand-accent text-white font-semibold" disabled={otpSent} />
-        {otpSent && <input type="text" maxLength="6" placeholder="ENTER OTP" value={userOtp} onChange={(e)=>setUserOtp(e.target.value)} className="w-full bg-black border border-brand-border p-5 rounded-2xl text-center text-2xl font-black tracking-[0.4em] text-brand-accent"/>}
-        <button type="submit" className="w-full bg-white text-black font-black py-4 rounded-2xl uppercase text-xs tracking-widest hover:bg-brand-accent transition-all">
-            {isSending ? "Processing..." : (otpSent ? "Verify & Proceed" : "Send Verification Code")}
-        </button>
-    </form>
-    )}
+<div className="p-8">
+{step === 1 && (
+<form onSubmit={(e) => {
+    e.preventDefault();
+    if(otpSent) {
+        if(userOtp === generatedOtp) setStep(2);
+        else alert("Wrong OTP");
+    } else {
+        handleSendOTP(e);
+    }
+}} className="space-y-4">
+    <input ref={emailInputRef} type="email" required placeholder="EMAIL ADDRESS" value={email} onChange={(e)=>setEmail(e.target.value)} className="w-full bg-black border border-brand-border p-5 rounded-2xl outline-none focus:border-brand-accent text-white font-semibold" disabled={otpSent} />
+    {otpSent && <input type="text" maxLength="6" placeholder="ENTER OTP" value={userOtp} onChange={(e)=>setUserOtp(e.target.value)} className="w-full bg-black border border-brand-border p-5 rounded-2xl text-center text-2xl font-black tracking-[0.4em] text-brand-accent"/>}
+    <button type="submit" className="w-full bg-white text-black font-black py-4 rounded-2xl uppercase text-xs tracking-widest hover:bg-brand-accent transition-all">
+        {isSending ? "Processing..." : (otpSent ? "Verify & Proceed" : "Send Verification Code")}
+    </button>
+</form>
+)}
 
-    {step === 2 && (
-    <div className="space-y-6 text-center">
-        <div className="p-4 bg-brand-accent/5 border border-brand-accent/20 rounded-2xl">
-            <p className="text-[10px] text-brand-accent font-bold uppercase tracking-widest">Fixed Time Slot</p>
-            <p className="text-3xl font-black text-white">09:30 PM</p>
-        </div>
-        <input type="date" min={today} required value={date} onChange={(e)=> { if(bookedDates.includes(e.target.value)) alert("Already Booked!"); else setDate(e.target.value); }} className="w-full bg-black border border-brand-border p-5 rounded-2xl text-white outline-none font-bold uppercase"/>
-        <button onClick={()=>date ? setStep(3) : alert("Select Date")} className="w-full bg-white text-black font-black py-4 rounded-2xl tracking-widest">Next Step</button>
-    </div>
-    )}
+{step === 2 && (
+<div className="space-y-6 text-center">
+<div className="p-4 bg-brand-accent/5 border border-brand-accent/20 rounded-2xl">
+<p className="text-[10px] text-brand-accent font-bold uppercase tracking-widest">Fixed Time Slot</p>
+<p className="text-3xl font-black">09:30 PM</p>
+</div>
+<input type="date" min={today} required value={date} onChange={(e)=> { if(bookedDates.includes(e.target.value)) alert("Already Booked!"); else setDate(e.target.value); }} className="w-full bg-black border border-brand-border p-5 rounded-2xl text-white outline-none font-bold uppercase"/>
+<button onClick={()=>date ? setStep(3) : alert("Select Date")} className="w-full bg-white text-black font-black py-4 rounded-2xl uppercase text-xs tracking-widest">Next</button>
+</div>
+)}
 
-    {step === 3 && (
-    <div className="space-y-5 text-center">
-        <div className="bg-black border border-brand-border p-5 rounded-2xl">
-            <p className="text-brand-muted text-[10px] uppercase mb-1 tracking-widest">Amount to Pay</p>
-            <p className="text-4xl font-black text-white">₹1,999</p>
-        </div>
-        <div className="bg-white p-2 rounded-2xl w-48 h-48 mx-auto flex items-center justify-center border-4 border-brand-accent">
-            <img src="WhatsApp Image 2026-04-20 at 3.01.01 PM.jpeg" alt="QR" className="max-w-full max-h-full" />
-        </div>
-        <p className="text-[10px] text-brand-muted font-black uppercase">UPI: bafna4955@okaxis</p>
-        <input type="text" placeholder="TXID (TRANSACTION ID)" value={txid} onChange={(e)=>setTxid(e.target.value)} className="w-full bg-black border border-brand-border p-4 rounded-2xl text-xs outline-none focus:border-brand-accent text-white font-bold"/>
-        <button onClick={()=>txid ? setStep(4) : alert("Enter TXID")} className="w-full bg-brand-accent text-black font-black py-4 rounded-2xl uppercase text-xs tracking-widest">Verify Payment</button>
-    </div>
-    )}
+{step === 3 && (
+<div className="space-y-5 text-center">
+<div className="bg-black border border-brand-border p-5 rounded-2xl">
+<p className="text-brand-muted text-[10px] uppercase mb-1 tracking-widest">Amount to Pay</p>
+<p className="text-4xl font-black text-white">₹1,999</p>
+</div>
+<img src="WhatsApp Image 2026-04-20 at 3.01.01 PM.jpeg" alt="Payment QR" className="w-48 h-48 mx-auto rounded-xl border border-brand-border shadow-xl"/>
+<p className="text-[10px] text-brand-muted font-bold tracking-widest uppercase">UPI ID: bafna4955@okaxis</p>
+<input type="text" placeholder="TRANSACTION ID (TXID)" value={txid} onChange={(e)=>setTxid(e.target.value)} className="w-full bg-black border border-brand-border p-4 rounded-2xl text-xs outline-none focus:border-brand-accent text-white font-bold"/>
+<button onClick={()=>txid ? setStep(4) : alert("Enter TXID")} className="w-full bg-brand-accent text-black font-black py-4 rounded-2xl uppercase text-xs tracking-widest">Verify Payment</button>
+</div>
+)}
 
-    {step === 4 && (
-    <div className="space-y-5 text-center">
-        <h3 className="text-xl font-black uppercase">Final Step</h3>
-        <p className="text-xs text-brand-muted uppercase font-bold tracking-widest">Mobile Number for Call</p>
-        <div className="flex shadow-lg">
-            <span className="bg-brand-border p-5 rounded-l-2xl text-brand-muted font-bold">+91</span>
-            <input type="tel" maxLength="10" placeholder="0000000000" value={phone} onChange={(e)=>setPhone(e.target.value)} className="w-full bg-black border border-brand-border p-5 rounded-r-2xl outline-none font-black text-white tracking-[0.2em]" />
-        </div>
-        <button onClick={() => finalizeBooking()} className="w-full bg-white text-black font-black py-4 rounded-2xl tracking-widest hover:bg-green-500">Finish Booking</button>
-    </div>
-    )}
-    </div>
+{step === 4 && (
+<div className="space-y-5 text-center">
+<h3 className="text-xl font-black uppercase">Final Step</h3>
+<p className="text-xs text-brand-muted">Provide your number so we can call you at 9:30 PM.</p>
+<div className="flex shadow-lg">
+<span className="bg-brand-border p-5 rounded-l-2xl text-brand-muted border border-r-0 border-brand-border font-bold">+91</span>
+<input type="tel" maxLength="10" placeholder="10 Digit Number" value={phone} onChange={(e)=>setPhone(e.target.value)} className="w-full bg-black border border-brand-border p-5 rounded-r-2xl outline-none font-bold text-white tracking-widest"/>
+</div>
+<button onClick={() =>finalizeBooking()} className="w-full bg-white text-black font-black py-4 rounded-2xl uppercase text-xs tracking-widest hover:bg-green-500 transition-colors">Finish Booking</button>
+</div>
+)}
+</div>
 </div>
 </div>
 );
@@ -232,50 +234,56 @@ return (
 <div className="min-h-screen bg-[#050505] p-6 md:p-12 z-20 relative">
 {!isAdminLoggedIn ? (
 <div className="max-w-md mx-auto mt-20 p-10 bg-brand-card border border-brand-border rounded-[2.5rem] shadow-2xl slide-up">
-    <h2 className="text-2xl font-black mb-6 text-center uppercase tracking-widest text-brand-accent">Admin Security</h2>
-    <form onSubmit={(e)=> {
-        e.preventDefault();
-        if (adminId === 'PRATHAM003' && adminPass === 'Pkjewellers155') setIsAdminLoggedIn(true);
-        else alert("Access Denied");
-    }} className="space-y-4">
-        <input type="text" placeholder="ID" value={adminId} onChange={(e)=>setAdminId(e.target.value)} className="w-full bg-black border border-brand-border p-4 rounded-2xl outline-none focus:border-brand-accent text-white"/>
-        <input type="password" placeholder="Pass" value={adminPass} onChange={(e)=>setAdminPass(e.target.value)} className="w-full bg-black border border-brand-border p-4 rounded-2xl outline-none focus:border-brand-accent text-white"/>
-        <button className="w-full bg-brand-accent text-black font-black py-4 rounded-2xl shadow-lg">Access Dashboard</button>
-        <button type="button" onClick={()=>setView('client')} className="w-full text-brand-muted text-[10px] mt-4 font-bold uppercase tracking-widest text-center">Return to Site</button>
-    </form>
+<h2 className="text-2xl font-black mb-6 text-center uppercase tracking-widest text-brand-accent">Admin Access</h2>
+<form onSubmit={handleAdminLogin} className="space-y-4">
+<input type="text" placeholder="ID" value={adminId} onChange={(e)=>setAdminId(e.target.value)} className="w-full bg-black border border-brand-border p-4 rounded-2xl outline-none focus:border-brand-accent text-white"/>
+<input type="password" placeholder="Pass" value={adminPass} onChange={(e)=>setAdminPass(e.target.value)} className="w-full bg-black border border-brand-border p-4 rounded-2xl outline-none focus:border-brand-accent text-white"/>
+<button className="w-full bg-brand-accent text-black font-black py-4 rounded-2xl shadow-lg">Access Dashboard</button>
+<button type="button" onClick={()=>setView('client')} className="w-full text-brand-muted text-xs mt-4 uppercase text-center w-full block">Return to Site</button>
+</form>
 </div>
 ) : (
 <div className="max-w-7xl mx-auto">
-    <div className="flex justify-between items-center mb-10 text-3xl font-black uppercase tracking-tighter">
-        <h2>Booking Control</h2>
-        <button onClick={()=>setIsAdminLoggedIn(false)} className="px-6 py-2 bg-brand-border rounded-xl font-bold uppercase text-xs">Logout</button>
-    </div>
-    <div className="overflow-x-auto rounded-[2rem] border border-brand-border bg-brand-card shadow-2xl">
-        <table className="w-full text-left">
-            <thead className="bg-[#111] text-[10px] uppercase text-brand-muted tracking-[0.2em] border-b border-brand-border">
-                <tr><th className="p-6">Client Info</th><th className="p-6">Date</th><th className="p-6">Contact</th><th className="p-6">TXID</th><th className="p-6">Action</th></tr>
-            </thead>
-            <tbody className="divide-y divide-brand-border">
-                {appointments.map(app => (
-                    <tr key={app.id}>
-                        <td className="p-6 text-sm font-bold text-white">{app.email}</td>
-                        <td className="p-6 text-sm text-white">{app.date}</td>
-                        <td className="p-6"><span className="text-brand-accent font-black text-sm">+91 {app.phone}</span></td>
-                        <td className="p-6 text-xs text-brand-muted font-mono">{app.txid}</td>
-                        <td className="p-6">
-                            {app.status !== 'Approved' ? (
-                                <button onClick={()=>{
-                                    setAppointments(appointments.map(a => a.id === app.id ? {...a, status: 'Approved'} : a));
-                                    setBookedDates([...bookedDates, app.date]);
-                                    alert("Approved & Locked.");
-                                }} className="bg-green-600 px-4 py-2 rounded text-[10px] font-bold">APPROVE</button>
-                            ) : <span className="text-green-500 font-bold uppercase text-[10px]">✓ Done</span>}
-                        </td>
-                    </tr>
-                ))}
-            </tbody>
-        </table>
-    </div>
+<div className="flex justify-between items-center mb-10">
+<h2 className="text-3xl font-black uppercase tracking-tighter">Booking Control</h2>
+<button onClick={()=>setIsAdminLoggedIn(false)} className="px-6 py-2 bg-brand-border rounded-xl font-bold uppercase text-xs">Logout</button>
+</div>
+<div className="overflow-x-auto rounded-[2rem] border border-brand-border bg-brand-card shadow-2xl">
+<table className="w-full text-left">
+<thead className="bg-[#111] text-[10px] uppercase text-brand-muted tracking-[0.2em] border-b border-brand-border">
+<tr>
+<th className="p-6">Client Info</th>
+<th className="p-6">Booked Date</th>
+<th className="p-6">Contact Number</th>
+<th className="p-6">TXID</th>
+<th className="p-6">Action</th>
+</tr>
+</thead>
+<tbody className="divide-y divide-brand-border">
+{appointments.map(app => (
+<tr key={app.id} className="hover:bg-white/5 transition-colors">
+<td className="p-6">
+<p className="text-sm font-bold">{app.email}</p>
+<p className="text-[10px] text-brand-muted uppercase tracking-widest">{app.id}</p>
+</td>
+<td className="p-6 text-sm font-medium">{app.date}</td>
+<td className="p-6">
+<span className="text-brand-accent font-black text-sm">+91 {app.phone}</span>
+</td>
+<td className="p-6 text-xs text-brand-muted font-mono">{app.txid}</td>
+<td className="p-6">
+<div className="flex gap-2">
+{app.status !== 'Approved' ? (
+<button onClick={()=>handleApprove(app.id, app.date)} className="bg-green-600 px-4 py-2 rounded text-[10px] font-bold">APPROVE</button>
+) : <span className="text-green-500 font-bold text-xs uppercase">✓ Done</span>}
+<button onClick={()=>{setAppointments(appointments.filter(a => a.id !== app.id))}} className="bg-white/10 px-4 py-2 rounded text-[10px] font-bold">REMOVE</button>
+</div>
+</td>
+</tr>
+))}
+</tbody>
+</table>
+</div>
 </div>
 )}
 </div>
@@ -284,8 +292,13 @@ return (
 
 return (
 <div className="min-h-screen flex flex-col selection:bg-brand-accent selection:text-black">
-    
-    <Background scrollY={scrollY} />
+    {/* Cinematic Video Background */}
+    <div className="video-bg-container">
+        <video autoplay muted loop playsinline>
+            <source src="Untitled design (2).mp4" type="video/mp4" />
+        </video>
+        <div className="video-overlay"></div>
+    </div>
 
     <Navbar />
 
@@ -296,21 +309,28 @@ return (
                     <span className="text-brand-accent font-black">30+ Years</span>
                     <span className="text-[10px] text-brand-muted uppercase tracking-widest font-bold">Experience</span>
                 </div>
-                <div className="milestone-badge px-6 py-2.5 rounded-full flex items-center gap-2 text-brand-accent font-black">5000+ Thriving Lives</div>
-                <div className="milestone-badge px-6 py-2.5 rounded-full flex items-center gap-2 text-brand-accent font-black text-xs">Unique Analysis Method</div>
+                <div className="milestone-badge px-6 py-2.5 rounded-full flex items-center gap-2">
+                    <span className="text-brand-accent font-black">5000+</span>
+                    <span className="text-[10px] text-brand-muted uppercase tracking-widest font-bold">Thriving Lives</span>
+                </div>
+                <div className="milestone-badge px-6 py-2.5 rounded-full flex items-center gap-2">
+                    <span className="text-brand-accent font-black text-xs">Unique Analysis Method</span>
+                </div>
             </div>
 
+            {/* SYNCED HERO TEXT WITH GLOW */}
             <h1 className="text-6xl md:text-[8rem] font-black tracking-tighter mb-4 leading-none uppercase">
                 <span className="glow-white">PRECISION</span><br/><span className="glow-accent italic">ASTROLOGY</span>
             </h1>
             <p className="text-brand-muted text-lg max-w-2xl mx-auto mb-16 font-light leading-relaxed">
-                Unlock your future with unique analysis methods. We provide logical answers to your life's most complex questions.
+                Get instant clarity with our unique analysis methods. We provide logical answers to your life's most complex questions.
             </p>
+
             <div className="max-w-sm mx-auto">
                 <div className="bg-brand-card p-12 rounded-[3.5rem] border border-brand-border shadow-2xl relative overflow-hidden group hover:border-brand-accent transition-all duration-700">
-                    <div className="absolute top-0 right-10 bg-brand-accent text-black text-[10px] font-black px-4 py-1.5 rounded-b-xl uppercase tracking-widest font-bold">Exclusive Deal</div>
+                    <div className="absolute top-0 right-10 bg-brand-accent text-black text-[10px] font-black px-4 py-1.5 rounded-b-xl uppercase tracking-widest">Exclusive Deal</div>
                     <p className="text-brand-muted line-through font-bold text-sm mb-1 opacity-60">₹3,500</p>
-                    <h2 className="text-7xl font-bold text-white mb-8 tracking-tighter">₹1,999</h2>
+                    <h2 className="text-7xl font-bold text-white mb-8 tracking-tighter uppercase">₹1,999</h2>
                     <button onClick={() => setIsBooking(true)} className="w-full bg-brand-accent text-black font-black py-5 rounded-[2rem] hover:scale-105 active:scale-95 transition-all shadow-xl uppercase tracking-widest text-xs">
                         Book Your Slot
                     </button>
@@ -320,19 +340,22 @@ return (
         </div>
     </main>
 
+    {/* Review Section */}
     <section id="reviews" className="bg-brand-card border-t border-brand-border py-28 px-6 z-10 relative">
         <div className="max-w-5xl mx-auto">
-            <h3 className="text-3xl font-black mb-16 text-center uppercase tracking-widest">Client Feedback</h3>
+            <h3 className="text-3xl font-black mb-16 text-center uppercase tracking-widest">Community Trust</h3>
             <div className="grid md:grid-cols-3 gap-8 mb-24 text-left">
-                {[{n:"Rahul V.", t:"Accuracy is shocking. Truly logical."}, {n:"Sanya M.", t:"Practical remedies that work instantly."}, {n:"Vikram", t:"Best ₹1999 well spent."}].map((rev, i) => (
+                {[{n:"Rahul V.", t:"Accuracy is shocking. Unique approach."}, {n:"Sanya M.", t:"Practical remedies. Logical explanations."}, {n:"Vikram", t:"Patient and professional. Best ₹1999 well spent."}].map((rev, i) => (
                     <div key={i} className="p-10 bg-black rounded-[3rem] border border-brand-border hover:border-brand-accent transition-all duration-500">
                         <p className="text-brand-muted text-sm leading-relaxed mb-8 italic">"{rev.t}"</p>
                         <p className="text-brand-accent font-black text-[10px] uppercase tracking-[0.2em]">— {rev.n}</p>
                     </div>
                 ))}
             </div>
+
             <div className="max-w-xl mx-auto bg-[#050505] p-12 rounded-[3.5rem] border border-brand-border text-center shadow-inner">
-                <textarea placeholder="Share your experience..." className="w-full bg-black border border-brand-border p-6 rounded-3xl outline-none mb-6 h-36 text-sm text-white focus:border-brand-accent transition-colors"></textarea>
+                <h4 className="font-bold mb-2 uppercase tracking-widest">Share Feedback</h4>
+                <textarea placeholder="Describe your experience..." className="w-full bg-black border border-brand-border p-6 rounded-3xl outline-none mb-6 h-36 text-sm text-white focus:border-brand-accent transition-colors"></textarea>
                 <button onClick={() => alert("Feedback sent!")} className="bg-white text-black px-12 py-4 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-brand-accent transition-colors">Submit Review</button>
             </div>
         </div>
