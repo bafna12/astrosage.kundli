@@ -31,29 +31,43 @@ muted: '#a1a1aa'
 </script>
 <style>
 body { background-color: #000; color: #fff; font-family: 'Inter', sans-serif; overflow-x: hidden; margin: 0; }
-.glass { background: rgba(10, 10, 10, 0.8); backdrop-filter: blur(12px); border: 1px solid #1f1f1f; }
+.glass { background: rgba(10, 10, 10, 0.7); backdrop-filter: blur(12px); border: 1px solid #1f1f1f; }
 @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
 .slide-up { animation: slideUp 0.6s ease-out forwards; }
 
-/* Animated Background Elements */
-.stars-container { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
-.star { position: absolute; background: white; border-radius: 50%; opacity: 0.5; animation: twinkle var(--d) infinite ease-in-out; }
-.planet { position: absolute; border-radius: 50%; opacity: 0.3; filter: blur(1px); }
-
-@keyframes twinkle { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
-@keyframes float { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-20px) rotate(10deg); } }
+/* Cinematic Video Background */
+.video-bg-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    overflow: hidden;
+}
+.video-bg-container video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.6;
+}
+.video-overlay {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.85) 100%);
+}
 
 input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
-.milestone-badge { background: rgba(250, 204, 21, 0.1); border: 1px solid rgba(250, 204, 21, 0.2); }
+.milestone-badge { background: rgba(250, 204, 21, 0.08); border: 1px solid rgba(250, 204, 21, 0.2); backdrop-filter: blur(8px); }
 
 /* GLOWING TEXT EFFECTS */
 .glow-accent {
 color: #facc15;
-text-shadow: 0 0 10px rgba(250, 204, 21, 0.7), 0 0 20px rgba(250, 204, 21, 0.5);
+text-shadow: 0 0 15px rgba(250, 204, 21, 0.8), 0 0 30px rgba(250, 204, 21, 0.4);
 }
 .glow-white {
 color: #fff;
-text-shadow: 0 0 10px rgba(255, 255, 255, 0.7), 0 0 20px rgba(255, 255, 255, 0.5);
+text-shadow: 0 0 15px rgba(255, 255, 255, 0.7), 0 0 30px rgba(255, 255, 255, 0.3);
 }
 
 ::-webkit-scrollbar { width: 8px; }
@@ -94,17 +108,6 @@ const [adminPass, setAdminPass] = useState('');
 const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
 
 const today = new Date().toISOString().split('T')[0];
-
-const stars = useMemo(() => {
-return [...Array(80)].map((_, i) => ({
-id: i,
-top: Math.random() * 100 + '%',
-left: Math.random() * 100 + '%',
-size: Math.random() * 2 + 1 + 'px',
-duration: Math.random() * 3 + 2 + 's'
-}));
-}, []);
-
 const emailInputRef = useRef(null);
 
 const handleApprove = (id, selectedDate) => {
@@ -115,10 +118,6 @@ const handleApprove = (id, selectedDate) => {
     alert(`Appointment approved. Date ${selectedDate} is now locked.`);
 };
 
-const handleReject = (id) => {
-    setAppointments(appointments.filter(app => app.id !== id));
-};
-
 const handleAdminLogin = (e) => {
     e.preventDefault();
     if (adminId === 'PRATHAM003' && adminPass === 'Pkjewellers155') setIsAdminLoggedIn(true);
@@ -126,53 +125,36 @@ const handleAdminLogin = (e) => {
 };
 
 const handleSendOTP = async (e) => {
-e.preventDefault();
-if (!email) { alert("Please enter email."); return; }
-setIsSending(true);
-const code = Math.floor(100000 + Math.random() * 900000).toString();
-setGeneratedOtp(code);
-try {
-await emailjs.send("service_z2jyz5c", "template_hod7wir", { to_email: email, otp_code: code });
-setOtpSent(true);
-setIsSending(false);
-setTimeout(() => emailInputRef.current?.focus(), 100);
-} catch (err) {
-alert("Email service error.");
-setIsSending(false);
-}
+    e.preventDefault();
+    if (!email) return;
+    setIsSending(true);
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    setGeneratedOtp(code);
+    try {
+        await emailjs.send("service_z2jyz5c", "template_hod7wir", { to_email: email, otp_code: code });
+        setOtpSent(true);
+        setIsSending(false);
+        setTimeout(() => emailInputRef.current?.focus(), 100);
+    } catch (err) {
+        alert("Email service error.");
+        setIsSending(false);
+    }
 };
 
 const finalizeBooking = () => {
-if (!phone || phone.length !== 10) { alert("Invalid number."); return; }
-const newApp = { id: 'AV-' + Math.floor(1000+Math.random()*9000), email, phone, date, status: 'Pending', txid };
-setAppointments([newApp, ...appointments]);
-alert("Wait for the approval from the Astro Veda");
-setIsBooking(false);
-setStep(1);
-setEmail(''); setPhone(''); setTxid(''); setDate(''); setOtpSent(false);
+    if (!phone || phone.length !== 10) { alert("Invalid number."); return; }
+    const newApp = { id: 'AV-' + Math.floor(1000+Math.random()*9000), email, phone, date, status: 'Pending', txid };
+    setAppointments([newApp, ...appointments]);
+    alert("Wait for the approval from the Astro Veda");
+    setIsBooking(false);
+    setStep(1);
+    setEmail(''); setPhone(''); setTxid(''); setDate(''); setOtpSent(false);
 };
-
-const MilestoneSection = () => (
-    <div className="flex flex-wrap justify-center gap-4 mb-10 slide-up">
-        <div className="milestone-badge px-6 py-2.5 rounded-full flex items-center gap-2">
-            <span className="text-brand-accent font-black">30+ Years</span>
-            <span className="text-[10px] text-brand-muted uppercase tracking-widest font-bold">Experience</span>
-        </div>
-        <div className="milestone-badge px-6 py-2.5 rounded-full flex items-center gap-2">
-            <span className="text-brand-accent font-black">5000+</span>
-            <span className="text-[10px] text-brand-muted uppercase tracking-widest font-bold">Thriving Lives</span>
-        </div>
-        <div className="milestone-badge px-6 py-2.5 rounded-full flex items-center gap-2">
-            <span className="text-brand-accent font-black">Unique Analysis</span>
-            <span className="text-[10px] text-brand-muted uppercase tracking-widest font-bold">Methods</span>
-        </div>
-    </div>
-);
 
 const Navbar = () => (
 <nav className="flex justify-between items-center p-8 max-w-7xl mx-auto w-full z-20 relative">
 <div className="flex items-center gap-4 cursor-pointer select-none" onDoubleClick={() => setView('admin')} onClick={() => setView('client')}>
-<span className="text-4xl font-black tracking-tighter glow-white">ASTRO<span className="text-brand-muted font-light">VEDA</span></span>
+<span className="text-4xl font-black tracking-tighter glow-white uppercase">ASTRO<span className="text-brand-muted font-light">VEDA</span></span>
 </div>
 <div className="hidden md:flex gap-8 text-xs font-bold uppercase tracking-widest text-brand-muted">
 <a href="#reviews" className="hover:text-white transition-colors">Client Feedback</a>
@@ -199,16 +181,7 @@ const BookingModal = () => (
         handleSendOTP(e);
     }
 }} className="space-y-4">
-    <input 
-        ref={emailInputRef}
-        type="email" 
-        required 
-        placeholder="EMAIL ADDRESS" 
-        value={email} 
-        onChange={(e)=>setEmail(e.target.value)} 
-        className="w-full bg-black border border-brand-border p-5 rounded-2xl outline-none focus:border-brand-accent text-white font-semibold" 
-        disabled={otpSent}
-    />
+    <input ref={emailInputRef} type="email" required placeholder="EMAIL ADDRESS" value={email} onChange={(e)=>setEmail(e.target.value)} className="w-full bg-black border border-brand-border p-5 rounded-2xl outline-none focus:border-brand-accent text-white font-semibold" disabled={otpSent} />
     {otpSent && <input type="text" maxLength="6" placeholder="ENTER OTP" value={userOtp} onChange={(e)=>setUserOtp(e.target.value)} className="w-full bg-black border border-brand-border p-5 rounded-2xl text-center text-2xl font-black tracking-[0.4em] text-brand-accent"/>}
     <button type="submit" className="w-full bg-white text-black font-black py-4 rounded-2xl uppercase text-xs tracking-widest hover:bg-brand-accent transition-all">
         {isSending ? "Processing..." : (otpSent ? "Verify & Proceed" : "Send Verification Code")}
@@ -222,7 +195,7 @@ const BookingModal = () => (
 <p className="text-[10px] text-brand-accent font-bold uppercase tracking-widest">Fixed Time Slot</p>
 <p className="text-3xl font-black">09:30 PM</p>
 </div>
-<input type="date" min={today} required value={date} onChange={(e)=> { if(bookedDates.includes(e.target.value)) alert("Already Booked!"); else setDate(e.target.value); }} className="w-full bg-black border border-brand-border p-5 rounded-2xl text-white outline-none"/>
+<input type="date" min={today} required value={date} onChange={(e)=> { if(bookedDates.includes(e.target.value)) alert("Already Booked!"); else setDate(e.target.value); }} className="w-full bg-black border border-brand-border p-5 rounded-2xl text-white outline-none font-bold uppercase"/>
 <button onClick={()=>date ? setStep(3) : alert("Select Date")} className="w-full bg-white text-black font-black py-4 rounded-2xl uppercase text-xs tracking-widest">Next</button>
 </div>
 )}
@@ -233,7 +206,7 @@ const BookingModal = () => (
 <p className="text-brand-muted text-[10px] uppercase mb-1 tracking-widest">Amount to Pay</p>
 <p className="text-4xl font-black text-white">₹1,999</p>
 </div>
-<img src="qr-code.jpg" alt="Astro Veda UPI QR" className="w-48 h-48 mx-auto rounded-xl border border-brand-border shadow-xl"/>
+<img src="WhatsApp Image 2026-04-20 at 3.01.01 PM.jpeg" alt="Payment QR" className="w-48 h-48 mx-auto rounded-xl border border-brand-border shadow-xl"/>
 <p className="text-[10px] text-brand-muted font-bold tracking-widest uppercase">UPI ID: bafna4955@okaxis</p>
 <input type="text" placeholder="TRANSACTION ID (TXID)" value={txid} onChange={(e)=>setTxid(e.target.value)} className="w-full bg-black border border-brand-border p-4 rounded-2xl text-xs outline-none focus:border-brand-accent text-white font-bold"/>
 <button onClick={()=>txid ? setStep(4) : alert("Enter TXID")} className="w-full bg-brand-accent text-black font-black py-4 rounded-2xl uppercase text-xs tracking-widest">Verify Payment</button>
@@ -261,18 +234,18 @@ return (
 <div className="min-h-screen bg-[#050505] p-6 md:p-12 z-20 relative">
 {!isAdminLoggedIn ? (
 <div className="max-w-md mx-auto mt-20 p-10 bg-brand-card border border-brand-border rounded-[2.5rem] shadow-2xl slide-up">
-<h2 className="text-2xl font-black mb-6 text-center uppercase tracking-widest text-brand-accent">Admin Security</h2>
-<form onSubmit={(e)=> {e.preventDefault(); if (adminId === 'PRATHAM003' && adminPass === 'Pkjewellers155') setIsAdminLoggedIn(true); else alert("Access Denied"); }} className="space-y-4">
+<h2 className="text-2xl font-black mb-6 text-center uppercase tracking-widest text-brand-accent">Admin Access</h2>
+<form onSubmit={handleAdminLogin} className="space-y-4">
 <input type="text" placeholder="ID" value={adminId} onChange={(e)=>setAdminId(e.target.value)} className="w-full bg-black border border-brand-border p-4 rounded-2xl outline-none focus:border-brand-accent text-white"/>
 <input type="password" placeholder="Pass" value={adminPass} onChange={(e)=>setAdminPass(e.target.value)} className="w-full bg-black border border-brand-border p-4 rounded-2xl outline-none focus:border-brand-accent text-white"/>
 <button className="w-full bg-brand-accent text-black font-black py-4 rounded-2xl shadow-lg">Access Dashboard</button>
-<button type="button" onClick={()=>setView('client')} className="w-full text-brand-muted text-xs mt-4 uppercase">Return to Site</button>
+<button type="button" onClick={()=>setView('client')} className="w-full text-brand-muted text-xs mt-4 uppercase text-center w-full block">Return to Site</button>
 </form>
 </div>
 ) : (
-<div className="max-w-6xl mx-auto">
+<div className="max-w-7xl mx-auto">
 <div className="flex justify-between items-center mb-10">
-<h2 className="text-3xl font-black uppercase">BOOKINGS</h2>
+<h2 className="text-3xl font-black uppercase tracking-tighter">Booking Control</h2>
 <button onClick={()=>setIsAdminLoggedIn(false)} className="px-6 py-2 bg-brand-border rounded-xl font-bold uppercase text-xs">Logout</button>
 </div>
 <div className="overflow-x-auto rounded-[2rem] border border-brand-border bg-brand-card shadow-2xl">
@@ -319,74 +292,80 @@ return (
 
 return (
 <div className="min-h-screen flex flex-col selection:bg-brand-accent selection:text-black">
-<Navbar />
-{/* Background */}
-<div className="stars-container">
-{stars.map(s => (
-<div key={s.id} className="star" style={{ top: s.top, left: s.left, width: s.size, height: s.size, '--d': s.duration }}></div>
-))}
-<div className="planet w-12 h-12 bg-yellow-900/40" style={{ top: '15%', left: '10%', animation: 'float 6s infinite ease-in-out' }}></div>
-<div className="planet w-20 h-20 bg-blue-900/30" style={{ top: '60%', right: '15%', animation: 'float 8s infinite reverse' }}></div>
-</div>
+    {/* Cinematic Video Background */}
+    <div className="video-bg-container">
+        <video autoplay muted loop playsinline>
+            <source src="Untitled design (2).mp4" type="video/mp4" />
+        </video>
+        <div className="video-overlay"></div>
+    </div>
 
-<main className="flex-grow flex flex-col items-center justify-center px-6 py-20 text-center z-10 relative">
-<div className="slide-up">
+    <Navbar />
 
-<MilestoneSection />
+    <main className="flex-grow flex flex-col items-center justify-center px-6 py-20 text-center z-10 relative">
+        <div className="slide-up">
+            <div className="flex flex-wrap justify-center gap-4 mb-10">
+                <div className="milestone-badge px-6 py-2.5 rounded-full flex items-center gap-2">
+                    <span className="text-brand-accent font-black">30+ Years</span>
+                    <span className="text-[10px] text-brand-muted uppercase tracking-widest font-bold">Experience</span>
+                </div>
+                <div className="milestone-badge px-6 py-2.5 rounded-full flex items-center gap-2">
+                    <span className="text-brand-accent font-black">5000+</span>
+                    <span className="text-[10px] text-brand-muted uppercase tracking-widest font-bold">Thriving Lives</span>
+                </div>
+                <div className="milestone-badge px-6 py-2.5 rounded-full flex items-center gap-2">
+                    <span className="text-brand-accent font-black text-xs">Unique Analysis Method</span>
+                </div>
+            </div>
 
-<h1 className="text-6xl md:text-[8rem] font-black tracking-tighter mb-4 leading-none uppercase">
-<span className="glow-white">PRECISION</span><br/><span className="glow-accent italic">ASTROLOGY</span>
-</h1>
-<p className="text-brand-muted text-lg max-w-2xl mx-auto mb-16 font-light leading-relaxed">
-Get instant clarity with our unique analysis methods. We provide logical answers to your life's most complex questions.
-</p>
+            {/* SYNCED HERO TEXT WITH GLOW */}
+            <h1 className="text-6xl md:text-[8rem] font-black tracking-tighter mb-4 leading-none uppercase">
+                <span className="glow-white">PRECISION</span><br/><span className="glow-accent italic">ASTROLOGY</span>
+            </h1>
+            <p className="text-brand-muted text-lg max-w-2xl mx-auto mb-16 font-light leading-relaxed">
+                Get instant clarity with our unique analysis methods. We provide logical answers to your life's most complex questions.
+            </p>
 
-<div className="max-w-sm mx-auto">
-<div className="bg-brand-card p-12 rounded-[3.5rem] border border-brand-border shadow-2xl relative overflow-hidden group hover:border-brand-accent transition-all duration-700">
-<div className="absolute top-0 right-10 bg-brand-accent text-black text-[10px] font-black px-4 py-1.5 rounded-b-xl uppercase tracking-widest">Exclusive Deal</div>
-<p className="text-brand-muted line-through font-bold text-sm mb-1 opacity-60">₹3,500</p>
-<h2 className="text-7xl font-bold text-white mb-8 tracking-tighter">₹1,999</h2>
-<button onClick={() => setIsBooking(true)} className="w-full bg-brand-accent text-black font-black py-5 rounded-[2rem] hover:scale-105 active:scale-95 transition-all shadow-xl uppercase tracking-widest text-xs">
-Book Your Slot
-</button>
-<p className="text-[10px] text-brand-muted mt-6 uppercase font-bold tracking-widest">Fixed at 09:30 PM Daily</p>
-</div>
-</div>
-</div>
-</main>
+            <div className="max-w-sm mx-auto">
+                <div className="bg-brand-card p-12 rounded-[3.5rem] border border-brand-border shadow-2xl relative overflow-hidden group hover:border-brand-accent transition-all duration-700">
+                    <div className="absolute top-0 right-10 bg-brand-accent text-black text-[10px] font-black px-4 py-1.5 rounded-b-xl uppercase tracking-widest">Exclusive Deal</div>
+                    <p className="text-brand-muted line-through font-bold text-sm mb-1 opacity-60">₹3,500</p>
+                    <h2 className="text-7xl font-bold text-white mb-8 tracking-tighter uppercase">₹1,999</h2>
+                    <button onClick={() => setIsBooking(true)} className="w-full bg-brand-accent text-black font-black py-5 rounded-[2rem] hover:scale-105 active:scale-95 transition-all shadow-xl uppercase tracking-widest text-xs">
+                        Book Your Slot
+                    </button>
+                    <p className="text-[10px] text-brand-muted mt-6 uppercase font-bold tracking-widest">Fixed at 09:30 PM Daily</p>
+                </div>
+            </div>
+        </div>
+    </main>
 
-{/* Review Section */}
-<section id="reviews" className="bg-brand-card border-t border-brand-border py-28 px-6 z-10 relative">
-<div className="max-w-5xl mx-auto">
-<h3 className="text-3xl font-black mb-16 text-center uppercase tracking-widest">Client Feedback</h3>
+    {/* Review Section */}
+    <section id="reviews" className="bg-brand-card border-t border-brand-border py-28 px-6 z-10 relative">
+        <div className="max-w-5xl mx-auto">
+            <h3 className="text-3xl font-black mb-16 text-center uppercase tracking-widest">Community Trust</h3>
+            <div className="grid md:grid-cols-3 gap-8 mb-24 text-left">
+                {[{n:"Rahul V.", t:"Accuracy is shocking. Unique approach."}, {n:"Sanya M.", t:"Practical remedies. Logical explanations."}, {n:"Vikram", t:"Patient and professional. Best ₹1999 well spent."}].map((rev, i) => (
+                    <div key={i} className="p-10 bg-black rounded-[3rem] border border-brand-border hover:border-brand-accent transition-all duration-500">
+                        <p className="text-brand-muted text-sm leading-relaxed mb-8 italic">"{rev.t}"</p>
+                        <p className="text-brand-accent font-black text-[10px] uppercase tracking-[0.2em]">— {rev.n}</p>
+                    </div>
+                ))}
+            </div>
 
-<div className="grid md:grid-cols-3 gap-8 mb-24 text-left">
-{[
-{name: "Rahul V.", text: "Accuracy is shocking. Unique approach."},
-{name: "Sanya M.", text: "Practical remedies. Logical explanations."},
-{name: "Vikram", text: " patient and professional. ₹1999 well spent."}
-].map((rev, i) => (
-<div key={i} className="p-10 bg-black rounded-[3rem] border border-brand-border hover:border-brand-accent transition-all duration-500">
-<p className="text-brand-muted text-sm leading-relaxed mb-8 italic">"{rev.text}"</p>
-<p className="text-brand-accent font-black text-[10px] uppercase tracking-[0.2em]">— {rev.name}</p>
-</div>
-))}
-</div>
+            <div className="max-w-xl mx-auto bg-[#050505] p-12 rounded-[3.5rem] border border-brand-border text-center shadow-inner">
+                <h4 className="font-bold mb-2 uppercase tracking-widest">Share Feedback</h4>
+                <textarea placeholder="Describe your experience..." className="w-full bg-black border border-brand-border p-6 rounded-3xl outline-none mb-6 h-36 text-sm text-white focus:border-brand-accent transition-colors"></textarea>
+                <button onClick={() => alert("Feedback sent!")} className="bg-white text-black px-12 py-4 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-brand-accent transition-colors">Submit Review</button>
+            </div>
+        </div>
+    </section>
 
-<div className="max-w-xl mx-auto bg-[#050505] p-12 rounded-[3.5rem] border border-brand-border text-center shadow-inner">
-<h4 className="font-bold mb-2 uppercase tracking-widest">Share Feedback</h4>
-<p className="text-xs text-brand-muted mb-8 italic"> help us improve</p>
-<textarea placeholder="Describe your experience..." className="w-full bg-black border border-brand-border p-6 rounded-3xl outline-none mb-6 h-36 text-sm text-white focus:border-brand-accent transition-colors"></textarea>
-<button onClick={() => alert("Feedback sent!")} className="bg-white text-black px-12 py-4 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-brand-accent transition-colors">Submit Review</button>
-</div>
-</div>
-</section>
+    <footer className="p-12 text-center border-t border-brand-border text-brand-muted text-[10px] font-bold uppercase tracking-[0.3em] relative z-20">
+        © 2026 ASTRO VEDA PREMIUM. ESTABLISHED 1996.
+    </footer>
 
-<footer className="p-12 text-center border-t border-brand-border text-brand-muted text-[10px] font-bold uppercase tracking-[0.3em] relative z-20">
-© 2026 ASTRO VEDA PREMIUM. ESTABLISHED 1996.
-</footer>
-
-{isBooking && <BookingModal />}
+    {isBooking && <BookingModal />}
 </div>
 );
 }
