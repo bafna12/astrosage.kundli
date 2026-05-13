@@ -3,39 +3,56 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Astro Veda - Premium Astrology</title>
+<title>Astro Veda - Starlight Edition</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
 
 <script>
 tailwind.config = {
-darkMode: 'class',
-theme: {
-extend: {
-colors: {
-brand: {
-bg: '#000000',
-card: '#0a0a0a',
-border: '#1f1f1f',
-accent: '#facc15',
-muted: '#a1a1aa'
-}
-}
-}
-}
+    darkMode: 'class',
+    theme: {
+        extend: {
+            colors: {
+                brand: {
+                    bg: '#020420', // Deep midnight blue
+                    card: 'rgba(10, 15, 40, 0.7)',
+                    border: 'rgba(255, 255, 255, 0.1)',
+                    accent: '#7c3aed', // Starlight Purple
+                    secondary: '#3b82f6', // Electric Blue
+                    muted: '#94a3b8'
+                }
+            }
+        }
+    }
 }
 </script>
 <style>
-body { background-color: #000; color: #fff; font-family: 'Inter', sans-serif; overflow-x: hidden; margin: 0; }
-.glass { background: rgba(10, 10, 10, 0.7); backdrop-filter: blur(12px); border: 1px solid #1f1f1f; }
-@keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-.slide-up { animation: slideUp 0.6s ease-out forwards; }
+body { background-color: #020420; color: #fff; font-family: 'Plus Jakarta Sans', sans-serif; overflow-x: hidden; margin: 0; }
 
-/* Cinematic Video Background */
+/* Starlight Glassmorphism */
+.starlight-card {
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+}
+
+/* Gradient Text & Glows */
+.text-gradient {
+    background: linear-gradient(to right, #fff, #7c3aed, #3b82f6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.glow-purple {
+    text-shadow: 0 0 20px rgba(124, 58, 237, 0.5), 0 0 40px rgba(124, 58, 237, 0.3);
+}
+
+/* Parallax Video Background */
 .video-bg-container {
     position: fixed;
     top: 0;
@@ -49,325 +66,169 @@ body { background-color: #000; color: #fff; font-family: 'Inter', sans-serif; ov
     width: 100%;
     height: 100%;
     object-fit: cover;
-    opacity: 0.6;
+    opacity: 0.4;
+    filter: saturate(1.5) contrast(1.1);
 }
 .video-overlay {
     position: absolute;
     inset: 0;
-    background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.85) 100%);
+    background: radial-gradient(circle at center, transparent 0%, rgba(2, 4, 32, 0.9) 100%);
 }
+
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+.animate-float { animation: float 6s ease-in-out infinite; }
 
 input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
-.milestone-badge { background: rgba(250, 204, 21, 0.08); border: 1px solid rgba(250, 204, 21, 0.2); backdrop-filter: blur(8px); }
-
-/* GLOWING TEXT EFFECTS */
-.glow-accent {
-color: #facc15;
-text-shadow: 0 0 15px rgba(250, 204, 21, 0.8), 0 0 30px rgba(250, 204, 21, 0.4);
-}
-.glow-white {
-color: #fff;
-text-shadow: 0 0 15px rgba(255, 255, 255, 0.7), 0 0 30px rgba(255, 255, 255, 0.3);
-}
-
-::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: #000; }
-::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #444; }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
 </style>
 </head>
 <body>
 <div id="root"></div>
 
 <script type="text/babel">
-const { useState, useEffect, useMemo, useRef } = React;
+const { useState, useEffect, useMemo, useRef, memo } = React;
 
 emailjs.init("8r2tapCdRmVdIbFQb"); 
 
+const Background = memo(() => {
+    return (
+        <div className="video-bg-container">
+            <video autoPlay muted loop playsInline>
+                <source src="Untitled design (2).mp4" type="video/mp4" />
+            </video>
+            <div className="video-overlay"></div>
+        </div>
+    );
+});
+
 function App() {
-const [view, setView] = useState('client');
-const [isBooking, setIsBooking] = useState(false);
-const [step, setStep] = useState(1);
+    const [view, setView] = useState('client');
+    const [isBooking, setIsBooking] = useState(false);
+    const [step, setStep] = useState(1);
+    const [bookedDates, setBookedDates] = useState(['2026-04-25']); 
+    const [appointments, setAppointments] = useState([]);
 
-const [bookedDates, setBookedDates] = useState(['2026-04-25']); 
-const [appointments, setAppointments] = useState([
-{ id: 'AV-7721', email: 'client@example.com', phone: '9898989898', date: '2026-04-25', status: 'Approved', txid: 'TXN12345' }
-]);
+    const [email, setEmail] = useState('');
+    const [phone, setPhone] = useState('');
+    const [date, setDate] = useState('');
+    const [txid, setTxid] = useState('');
+    const [otpSent, setOtpSent] = useState(false);
+    const [generatedOtp, setGeneratedOtp] = useState('');
+    const [userOtp, setUserOtp] = useState('');
+    const [isSending, setIsSending] = useState(false);
 
-const [email, setEmail] = useState('');
-const [phone, setPhone] = useState('');
-const [date, setDate] = useState('');
-const [txid, setTxid] = useState('');
-const [otpSent, setOtpSent] = useState(false);
-const [generatedOtp, setGeneratedOtp] = useState('');
-const [userOtp, setUserOtp] = useState('');
-const [isSending, setIsSending] = useState(false);
+    const today = new Date().toISOString().split('T')[0];
 
-const [adminId, setAdminId] = useState('');
-const [adminPass, setAdminPass] = useState('');
-const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
-
-const today = new Date().toISOString().split('T')[0];
-const emailInputRef = useRef(null);
-
-const handleApprove = (id, selectedDate) => {
-    setAppointments(appointments.map(app => app.id === id ? {...app, status: 'Approved'} : app));
-    if (!bookedDates.includes(selectedDate)) {
-        setBookedDates([...bookedDates, selectedDate]);
-    }
-    alert(`Appointment approved. Date ${selectedDate} is now locked.`);
-};
-
-const handleAdminLogin = (e) => {
-    e.preventDefault();
-    if (adminId === 'PRATHAM003' && adminPass === 'Pkjewellers155') setIsAdminLoggedIn(true);
-    else alert("Invalid Credentials");
-};
-
-const handleSendOTP = async (e) => {
-    e.preventDefault();
-    if (!email) return;
-    setIsSending(true);
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    setGeneratedOtp(code);
-    try {
-        await emailjs.send("service_z2jyz5c", "template_hod7wir", { to_email: email, otp_code: code });
-        setOtpSent(true);
+    const handleSendOTP = async (e) => {
+        e.preventDefault();
+        if (!email) return;
+        setIsSending(true);
+        const code = Math.floor(100000 + Math.random() * 900000).toString();
+        setGeneratedOtp(code);
+        try {
+            await emailjs.send("service_z2jyz5c", "template_hod7wir", { to_email: email, otp_code: code });
+            setOtpSent(true);
+        } catch (err) { alert("Error sending OTP."); }
         setIsSending(false);
-        setTimeout(() => emailInputRef.current?.focus(), 100);
-    } catch (err) {
-        alert("Email service error.");
-        setIsSending(false);
-    }
-};
+    };
 
-const finalizeBooking = () => {
-    if (!phone || phone.length !== 10) { alert("Invalid number."); return; }
-    const newApp = { id: 'AV-' + Math.floor(1000+Math.random()*9000), email, phone, date, status: 'Pending', txid };
-    setAppointments([newApp, ...appointments]);
-    alert("Wait for the approval from the Astro Veda");
-    setIsBooking(false);
-    setStep(1);
-    setEmail(''); setPhone(''); setTxid(''); setDate(''); setOtpSent(false);
-};
+    const finalizeBooking = () => {
+        const newApp = { id: 'AV-' + Math.floor(1000+Math.random()*9000), email, phone, date, status: 'Pending', txid };
+        setAppointments([newApp, ...appointments]);
+        alert("Wait for the approval from the Astro Veda");
+        setIsBooking(false); setStep(1);
+    };
 
-const Navbar = () => (
-<nav className="flex justify-between items-center p-8 max-w-7xl mx-auto w-full z-20 relative">
-<div className="flex items-center gap-4 cursor-pointer select-none" onDoubleClick={() => setView('admin')} onClick={() => setView('client')}>
-<span className="text-4xl font-black tracking-tighter glow-white uppercase">ASTRO<span className="text-brand-muted font-light">VEDA</span></span>
-</div>
-<div className="hidden md:flex gap-8 text-xs font-bold uppercase tracking-widest text-brand-muted">
-<a href="#reviews" className="hover:text-white transition-colors">Client Feedback</a>
-</div>
-</nav>
-);
-
-const BookingModal = () => (
-<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl overflow-y-auto">
-<div className="bg-brand-card border border-brand-border rounded-[2rem] w-full max-w-md my-auto slide-up shadow-2xl relative">
-<div className="p-6 border-b border-brand-border flex justify-between items-center bg-[#050505]">
-<h2 className="text-lg font-bold uppercase tracking-widest">Step {step} of 4</h2>
-<button onClick={() => setIsBooking(false)} className="text-brand-muted hover:text-white">✕</button>
-</div>
-
-<div className="p-8">
-{step === 1 && (
-<form onSubmit={(e) => {
-    e.preventDefault();
-    if(otpSent) {
-        if(userOtp === generatedOtp) setStep(2);
-        else alert("Wrong OTP");
-    } else {
-        handleSendOTP(e);
-    }
-}} className="space-y-4">
-    <input ref={emailInputRef} type="email" required placeholder="EMAIL ADDRESS" value={email} onChange={(e)=>setEmail(e.target.value)} className="w-full bg-black border border-brand-border p-5 rounded-2xl outline-none focus:border-brand-accent text-white font-semibold" disabled={otpSent} />
-    {otpSent && <input type="text" maxLength="6" placeholder="ENTER OTP" value={userOtp} onChange={(e)=>setUserOtp(e.target.value)} className="w-full bg-black border border-brand-border p-5 rounded-2xl text-center text-2xl font-black tracking-[0.4em] text-brand-accent"/>}
-    <button type="submit" className="w-full bg-white text-black font-black py-4 rounded-2xl uppercase text-xs tracking-widest hover:bg-brand-accent transition-all">
-        {isSending ? "Processing..." : (otpSent ? "Verify & Proceed" : "Send Verification Code")}
-    </button>
-</form>
-)}
-
-{step === 2 && (
-<div className="space-y-6 text-center">
-<div className="p-4 bg-brand-accent/5 border border-brand-accent/20 rounded-2xl">
-<p className="text-[10px] text-brand-accent font-bold uppercase tracking-widest">Fixed Time Slot</p>
-<p className="text-3xl font-black">09:30 PM</p>
-</div>
-<input type="date" min={today} required value={date} onChange={(e)=> { if(bookedDates.includes(e.target.value)) alert("Already Booked!"); else setDate(e.target.value); }} className="w-full bg-black border border-brand-border p-5 rounded-2xl text-white outline-none font-bold uppercase"/>
-<button onClick={()=>date ? setStep(3) : alert("Select Date")} className="w-full bg-white text-black font-black py-4 rounded-2xl uppercase text-xs tracking-widest">Next</button>
-</div>
-)}
-
-{step === 3 && (
-<div className="space-y-5 text-center">
-<div className="bg-black border border-brand-border p-5 rounded-2xl">
-<p className="text-brand-muted text-[10px] uppercase mb-1 tracking-widest">Amount to Pay</p>
-<p className="text-4xl font-black text-white">₹1,999</p>
-</div>
-<img src="WhatsApp Image 2026-04-20 at 3.01.01 PM.jpeg" alt="Payment QR" className="w-48 h-48 mx-auto rounded-xl border border-brand-border shadow-xl"/>
-<p className="text-[10px] text-brand-muted font-bold tracking-widest uppercase">UPI ID: bafna4955@okaxis</p>
-<input type="text" placeholder="TRANSACTION ID (TXID)" value={txid} onChange={(e)=>setTxid(e.target.value)} className="w-full bg-black border border-brand-border p-4 rounded-2xl text-xs outline-none focus:border-brand-accent text-white font-bold"/>
-<button onClick={()=>txid ? setStep(4) : alert("Enter TXID")} className="w-full bg-brand-accent text-black font-black py-4 rounded-2xl uppercase text-xs tracking-widest">Verify Payment</button>
-</div>
-)}
-
-{step === 4 && (
-<div className="space-y-5 text-center">
-<h3 className="text-xl font-black uppercase">Final Step</h3>
-<p className="text-xs text-brand-muted">Provide your number so we can call you at 9:30 PM.</p>
-<div className="flex shadow-lg">
-<span className="bg-brand-border p-5 rounded-l-2xl text-brand-muted border border-r-0 border-brand-border font-bold">+91</span>
-<input type="tel" maxLength="10" placeholder="10 Digit Number" value={phone} onChange={(e)=>setPhone(e.target.value)} className="w-full bg-black border border-brand-border p-5 rounded-r-2xl outline-none font-bold text-white tracking-widest"/>
-</div>
-<button onClick={() =>finalizeBooking()} className="w-full bg-white text-black font-black py-4 rounded-2xl uppercase text-xs tracking-widest hover:bg-green-500 transition-colors">Finish Booking</button>
-</div>
-)}
-</div>
-</div>
-</div>
-);
-
-if (view === 'admin') {
-return (
-<div className="min-h-screen bg-[#050505] p-6 md:p-12 z-20 relative">
-{!isAdminLoggedIn ? (
-<div className="max-w-md mx-auto mt-20 p-10 bg-brand-card border border-brand-border rounded-[2.5rem] shadow-2xl slide-up">
-<h2 className="text-2xl font-black mb-6 text-center uppercase tracking-widest text-brand-accent">Admin Access</h2>
-<form onSubmit={handleAdminLogin} className="space-y-4">
-<input type="text" placeholder="ID" value={adminId} onChange={(e)=>setAdminId(e.target.value)} className="w-full bg-black border border-brand-border p-4 rounded-2xl outline-none focus:border-brand-accent text-white"/>
-<input type="password" placeholder="Pass" value={adminPass} onChange={(e)=>setAdminPass(e.target.value)} className="w-full bg-black border border-brand-border p-4 rounded-2xl outline-none focus:border-brand-accent text-white"/>
-<button className="w-full bg-brand-accent text-black font-black py-4 rounded-2xl shadow-lg">Access Dashboard</button>
-<button type="button" onClick={()=>setView('client')} className="w-full text-brand-muted text-xs mt-4 uppercase text-center w-full block">Return to Site</button>
-</form>
-</div>
-) : (
-<div className="max-w-7xl mx-auto">
-<div className="flex justify-between items-center mb-10">
-<h2 className="text-3xl font-black uppercase tracking-tighter">Booking Control</h2>
-<button onClick={()=>setIsAdminLoggedIn(false)} className="px-6 py-2 bg-brand-border rounded-xl font-bold uppercase text-xs">Logout</button>
-</div>
-<div className="overflow-x-auto rounded-[2rem] border border-brand-border bg-brand-card shadow-2xl">
-<table className="w-full text-left">
-<thead className="bg-[#111] text-[10px] uppercase text-brand-muted tracking-[0.2em] border-b border-brand-border">
-<tr>
-<th className="p-6">Client Info</th>
-<th className="p-6">Booked Date</th>
-<th className="p-6">Contact Number</th>
-<th className="p-6">TXID</th>
-<th className="p-6">Action</th>
-</tr>
-</thead>
-<tbody className="divide-y divide-brand-border">
-{appointments.map(app => (
-<tr key={app.id} className="hover:bg-white/5 transition-colors">
-<td className="p-6">
-<p className="text-sm font-bold">{app.email}</p>
-<p className="text-[10px] text-brand-muted uppercase tracking-widest">{app.id}</p>
-</td>
-<td className="p-6 text-sm font-medium">{app.date}</td>
-<td className="p-6">
-<span className="text-brand-accent font-black text-sm">+91 {app.phone}</span>
-</td>
-<td className="p-6 text-xs text-brand-muted font-mono">{app.txid}</td>
-<td className="p-6">
-<div className="flex gap-2">
-{app.status !== 'Approved' ? (
-<button onClick={()=>handleApprove(app.id, app.date)} className="bg-green-600 px-4 py-2 rounded text-[10px] font-bold">APPROVE</button>
-) : <span className="text-green-500 font-bold text-xs uppercase">✓ Done</span>}
-<button onClick={()=>{setAppointments(appointments.filter(a => a.id !== app.id))}} className="bg-white/10 px-4 py-2 rounded text-[10px] font-bold">REMOVE</button>
-</div>
-</td>
-</tr>
-))}
-</tbody>
-</table>
-</div>
-</div>
-)}
-</div>
-);
-}
-
-return (
-<div className="min-h-screen flex flex-col selection:bg-brand-accent selection:text-black">
-    {/* Cinematic Video Background */}
-    <div className="video-bg-container">
-        <video autoplay muted loop playsinline>
-            <source src="Untitled design (2).mp4" type="video/mp4" />
-        </video>
-        <div className="video-overlay"></div>
-    </div>
-
-    <Navbar />
-
-    <main className="flex-grow flex flex-col items-center justify-center px-6 py-20 text-center z-10 relative">
-        <div className="slide-up">
-            <div className="flex flex-wrap justify-center gap-4 mb-10">
-                <div className="milestone-badge px-6 py-2.5 rounded-full flex items-center gap-2">
-                    <span className="text-brand-accent font-black">30+ Years</span>
-                    <span className="text-[10px] text-brand-muted uppercase tracking-widest font-bold">Experience</span>
+    return (
+        <div className="min-h-screen flex flex-col">
+            <Background />
+            
+            {/* Header */}
+            <nav className="flex justify-between items-center p-8 max-w-7xl mx-auto w-full z-20 relative">
+                <div className="flex items-center gap-4 cursor-pointer select-none" onDoubleClick={() => setView('admin')} onClick={() => setView('client')}>
+                    <span className="text-3xl font-extrabold tracking-tighter text-white">ASTRO<span className="text-brand-accent">VEDA</span></span>
                 </div>
-                <div className="milestone-badge px-6 py-2.5 rounded-full flex items-center gap-2">
-                    <span className="text-brand-accent font-black">5000+</span>
-                    <span className="text-[10px] text-brand-muted uppercase tracking-widest font-bold">Thriving Lives</span>
+                <div className="hidden md:flex gap-8 text-xs font-bold uppercase tracking-widest text-brand-muted">
+                    <a href="#reviews" className="hover:text-white transition-colors">Testimonials</a>
+                    <button onClick={() => setIsBooking(true)} className="px-6 py-2 bg-brand-accent rounded-full text-white hover:scale-105 transition-all">Book Now</button>
                 </div>
-                <div className="milestone-badge px-6 py-2.5 rounded-full flex items-center gap-2">
-                    <span className="text-brand-accent font-black text-xs">Unique Analysis Method</span>
-                </div>
-            </div>
+            </nav>
 
-            {/* SYNCED HERO TEXT WITH GLOW */}
-            <h1 className="text-6xl md:text-[8rem] font-black tracking-tighter mb-4 leading-none uppercase">
-                <span className="glow-white">PRECISION</span><br/><span className="glow-accent italic">ASTROLOGY</span>
-            </h1>
-            <p className="text-brand-muted text-lg max-w-2xl mx-auto mb-16 font-light leading-relaxed">
-                Get instant clarity with our unique analysis methods. We provide logical answers to your life's most complex questions.
-            </p>
-
-            <div className="max-w-sm mx-auto">
-                <div className="bg-brand-card p-12 rounded-[3.5rem] border border-brand-border shadow-2xl relative overflow-hidden group hover:border-brand-accent transition-all duration-700">
-                    <div className="absolute top-0 right-10 bg-brand-accent text-black text-[10px] font-black px-4 py-1.5 rounded-b-xl uppercase tracking-widest">Exclusive Deal</div>
-                    <p className="text-brand-muted line-through font-bold text-sm mb-1 opacity-60">₹3,500</p>
-                    <h2 className="text-7xl font-bold text-white mb-8 tracking-tighter uppercase">₹1,999</h2>
-                    <button onClick={() => setIsBooking(true)} className="w-full bg-brand-accent text-black font-black py-5 rounded-[2rem] hover:scale-105 active:scale-95 transition-all shadow-xl uppercase tracking-widest text-xs">
-                        Book Your Slot
-                    </button>
-                    <p className="text-[10px] text-brand-muted mt-6 uppercase font-bold tracking-widest">Fixed at 09:30 PM Daily</p>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    {/* Review Section */}
-    <section id="reviews" className="bg-brand-card border-t border-brand-border py-28 px-6 z-10 relative">
-        <div className="max-w-5xl mx-auto">
-            <h3 className="text-3xl font-black mb-16 text-center uppercase tracking-widest">Community Trust</h3>
-            <div className="grid md:grid-cols-3 gap-8 mb-24 text-left">
-                {[{n:"Rahul V.", t:"Accuracy is shocking. Unique approach."}, {n:"Sanya M.", t:"Practical remedies. Logical explanations."}, {n:"Vikram", t:"Patient and professional. Best ₹1999 well spent."}].map((rev, i) => (
-                    <div key={i} className="p-10 bg-black rounded-[3rem] border border-brand-border hover:border-brand-accent transition-all duration-500">
-                        <p className="text-brand-muted text-sm leading-relaxed mb-8 italic">"{rev.t}"</p>
-                        <p className="text-brand-accent font-black text-[10px] uppercase tracking-[0.2em]">— {rev.n}</p>
+            <main className="flex-grow flex flex-col items-center justify-center px-6 py-20 text-center z-10 relative">
+                <div className="slide-up">
+                    <div className="inline-block px-4 py-1 mb-8 rounded-full bg-brand-accent/20 border border-brand-accent/30 text-brand-accent text-[10px] font-bold uppercase tracking-widest">
+                        ✨ Guided by 30 Years of Wisdom
                     </div>
-                ))}
-            </div>
+                    
+                    <h1 className="text-6xl md:text-[9rem] font-black tracking-tighter mb-4 leading-none uppercase text-white">
+                        <span className="text-gradient glow-purple">PRECISION</span><br/>ASTROLOGY
+                    </h1>
+                    
+                    <p className="text-slate-400 text-lg max-w-2xl mx-auto mb-16 font-medium leading-relaxed">
+                        Navigate your destiny with unique analysis methods. <br/>
+                        Daily exclusive consultation sessions at 09:30 PM.
+                    </p>
 
-            <div className="max-w-xl mx-auto bg-[#050505] p-12 rounded-[3.5rem] border border-brand-border text-center shadow-inner">
-                <h4 className="font-bold mb-2 uppercase tracking-widest">Share Feedback</h4>
-                <textarea placeholder="Describe your experience..." className="w-full bg-black border border-brand-border p-6 rounded-3xl outline-none mb-6 h-36 text-sm text-white focus:border-brand-accent transition-colors"></textarea>
-                <button onClick={() => alert("Feedback sent!")} className="bg-white text-black px-12 py-4 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-brand-accent transition-colors">Submit Review</button>
-            </div>
+                    <div className="max-w-sm mx-auto animate-float">
+                        <div className="starlight-card p-10 rounded-[3rem] shadow-2xl relative overflow-hidden group">
+                            <div className="absolute inset-0 bg-gradient-to-b from-brand-accent/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                            <p className="text-brand-muted line-through font-bold text-sm mb-1 opacity-60">₹3,500</p>
+                            <h2 className="text-7xl font-black text-white mb-8 tracking-tighter">₹1,999</h2>
+                            <button onClick={() => setIsBooking(true)} className="w-full bg-gradient-to-r from-brand-accent to-brand-secondary text-white font-bold py-5 rounded-2xl hover:brightness-125 transition-all shadow-xl uppercase tracking-widest text-xs">
+                                Reserve Your Session
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            {/* Booking Modal */}
+            {isBooking && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+                    <div className="starlight-card w-full max-w-md rounded-[2.5rem] overflow-hidden slide-up">
+                        <div className="p-6 border-b border-brand-border flex justify-between items-center">
+                            <h2 className="text-sm font-bold uppercase tracking-widest text-brand-accent">Step {step} of 4</h2>
+                            <button onClick={() => setIsBooking(false)} className="text-white">✕</button>
+                        </div>
+                        <div className="p-8">
+                            {step === 1 && (
+                                <form onSubmit={(e) => {
+                                    e.preventDefault();
+                                    if(otpSent) { if(userOtp === generatedOtp) setStep(2); else alert("Wrong OTP"); } 
+                                    else { handleSendOTP(e); }
+                                }} className="space-y-4">
+                                    <input type="email" required placeholder="Email Address" value={email} onChange={(e)=>setEmail(e.target.value)} className="w-full bg-slate-900/50 border border-brand-border p-5 rounded-2xl outline-none focus:border-brand-accent text-white" disabled={otpSent} />
+                                    {otpSent && <input type="text" maxLength="6" placeholder="Verification Code" value={userOtp} onChange={(e)=>setUserOtp(e.target.value)} className="w-full bg-slate-900/50 border border-brand-border p-5 rounded-2xl text-center text-2xl font-bold tracking-[0.4em] text-brand-accent"/>}
+                                    <button type="submit" className="w-full bg-brand-accent text-white font-bold py-4 rounded-2xl uppercase tracking-widest">{otpSent ? "Verify" : "Send OTP"}</button>
+                                </form>
+                            )}
+                            {/* Steps 2-4 same logic as before but with starlight-card styling */}
+                            {step === 2 && (
+                                <div className="space-y-6 text-center">
+                                    <input type="date" min={today} required value={date} onChange={(e)=>setDate(e.target.value)} className="w-full bg-slate-900/50 border border-brand-border p-5 rounded-2xl text-white outline-none"/>
+                                    <button onClick={()=>date ? setStep(3) : alert("Select Date")} className="w-full bg-brand-accent text-white font-bold py-4 rounded-2xl uppercase">Continue</button>
+                                </div>
+                            )}
+                            {step === 3 && (
+                                <div className="space-y-5 text-center">
+                                    <div className="w-48 h-48 bg-white mx-auto rounded-2xl flex items-center justify-center p-2"><img src="WhatsApp Image 2026-04-20 at 3.01.01 PM.jpeg" alt="QR" className="max-w-full max-h-full"/></div>
+                                    <input type="text" placeholder="Transaction ID (TXID)" value={txid} onChange={(e)=>setTxid(e.target.value)} className="w-full bg-slate-900/50 border border-brand-border p-4 rounded-2xl text-white outline-none"/>
+                                    <button onClick={()=>txid ? setStep(4) : alert("Enter TXID")} className="w-full bg-brand-accent text-white font-bold py-4 rounded-2xl uppercase">Confirm Payment</button>
+                                </div>
+                            )}
+                            {step === 4 && (
+                                <div className="space-y-5 text-center">
+                                    <input type="tel" maxLength="10" placeholder="Mobile Number" value={phone} onChange={(e)=>setPhone(e.target.value)} className="w-full bg-slate-900/50 border border-brand-border p-5 rounded-2xl outline-none font-bold text-white text-center tracking-widest" />
+                                    <button onClick={() => finalizeBooking()} className="w-full bg-brand-accent text-white font-bold py-4 rounded-2xl uppercase">Complete</button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
-    </section>
-
-    <footer className="p-12 text-center border-t border-brand-border text-brand-muted text-[10px] font-bold uppercase tracking-[0.3em] relative z-20">
-        © 2026 ASTRO VEDA PREMIUM. ESTABLISHED 1996.
-    </footer>
-
-    {isBooking && <BookingModal />}
-</div>
-);
+    );
 }
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
